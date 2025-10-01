@@ -1,5 +1,5 @@
 import React from 'react';
-import { Request } from '../../lib/supabase';
+import { Request } from '../../lib/firebase';
 
 interface RequestItemProps {
   request: Request;

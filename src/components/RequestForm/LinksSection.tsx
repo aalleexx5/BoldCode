@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { supabase, RequestLink } from '../../lib/supabase';
+import { db, RequestLink } from '../../lib/firebase';
+import { collection, query, where, orderBy, getDocs, addDoc, deleteDoc, doc } from 'firebase/firestore';
 import { Plus, ExternalLink, Trash2, X } from 'lucide-react';
 
 interface LinksSectionProps {
@@ -21,14 +22,17 @@ export const LinksSection: React.FC<LinksSectionProps> = ({ requestId }) => {
 
   const loadLinks = async () => {
     try {
-      const { data, error } = await supabase
-        .from('request_links')
-        .select('*')
-        .eq('request_id', requestId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setLinks(data || []);
+      const q = query(
+        collection(db, 'request_links'),
+        where('request_id', '==', requestId),
+        orderBy('created_at', 'desc')
+      );
+      const querySnapshot = await getDocs(q);
+      const linksData: RequestLink[] = [];
+      querySnapshot.forEach((doc) => {
+        linksData.push({ id: doc.id, ...doc.data() } as RequestLink);
+      });
+      setLinks(linksData);
     } catch (error) {
       console.error('Error loading links:', error);
     }
@@ -41,14 +45,11 @@ export const LinksSection: React.FC<LinksSectionProps> = ({ requestId }) => {
     }
 
     try {
-      const { error } = await supabase
-        .from('request_links')
-        .insert({
-          request_id: requestId,
-          ...newLink,
-        });
-
-      if (error) throw error;
+      await addDoc(collection(db, 'request_links'), {
+        request_id: requestId,
+        ...newLink,
+        created_at: new Date().toISOString(),
+      });
 
       setNewLink({ name: '', url: '', comments: '' });
       setShowNewLinkForm(false);
@@ -63,12 +64,7 @@ export const LinksSection: React.FC<LinksSectionProps> = ({ requestId }) => {
     if (!confirm('Are you sure you want to delete this link?')) return;
 
     try {
-      const { error } = await supabase
-        .from('request_links')
-        .delete()
-        .eq('id', linkId);
-
-      if (error) throw error;
+      await deleteDoc(doc(db, 'request_links', linkId));
       loadLinks();
     } catch (error) {
       console.error('Error deleting link:', error);

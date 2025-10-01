@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { supabase, RequestComment } from '../../lib/supabase';
+import { db, RequestComment } from '../../lib/firebase';
+import { collection, query, where, orderBy, getDocs, addDoc, doc, getDoc } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
 import { Send, MessageSquare } from 'lucide-react';
 
@@ -19,17 +20,24 @@ export const CommentsSection: React.FC<CommentsSectionProps> = ({ requestId }) =
 
   const loadComments = async () => {
     try {
-      const { data, error } = await supabase
-        .from('request_comments')
-        .select(`
-          *,
-          user:profiles(full_name, email)
-        `)
-        .eq('request_id', requestId)
-        .order('created_at', { ascending: true });
+      const q = query(
+        collection(db, 'request_comments'),
+        where('request_id', '==', requestId),
+        orderBy('created_at', 'asc')
+      );
+      const querySnapshot = await getDocs(q);
+      const commentsData: RequestComment[] = [];
 
-      if (error) throw error;
-      setComments(data || []);
+      for (const docSnap of querySnapshot.docs) {
+        const commentData = { id: docSnap.id, ...docSnap.data() } as RequestComment;
+        const userDoc = await getDoc(doc(db, 'profiles', commentData.user_id));
+        if (userDoc.exists()) {
+          commentData.user = { id: userDoc.id, ...userDoc.data() } as any;
+        }
+        commentsData.push(commentData);
+      }
+
+      setComments(commentsData);
     } catch (error) {
       console.error('Error loading comments:', error);
     }
@@ -40,15 +48,12 @@ export const CommentsSection: React.FC<CommentsSectionProps> = ({ requestId }) =
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('request_comments')
-        .insert({
-          request_id: requestId,
-          user_id: user!.id,
-          comment: newComment,
-        });
-
-      if (error) throw error;
+      await addDoc(collection(db, 'request_comments'), {
+        request_id: requestId,
+        user_id: user!.uid,
+        comment: newComment,
+        created_at: new Date().toISOString(),
+      });
 
       setNewComment('');
       loadComments();

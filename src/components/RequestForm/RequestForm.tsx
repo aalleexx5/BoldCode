@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { supabase, Request, Client } from '../../lib/supabase';
+import { db, Request } from '../../lib/firebase';
+import { collection, query, orderBy, limit, getDocs, doc, getDoc, addDoc, updateDoc } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
-import { X, Save, Copy, Plus } from 'lucide-react';
+import { X, Save, Copy } from 'lucide-react';
 import { ClientSelector } from './ClientSelector';
 import { LinksSection } from './LinksSection';
 import { CommentsSection } from './CommentsSection';
@@ -41,17 +42,13 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
 
   const generateRequestNumber = async () => {
     try {
-      const { data, error } = await supabase
-        .from('requests')
-        .select('request_number')
-        .order('request_number', { ascending: false })
-        .limit(1);
-
-      if (error) throw error;
+      const q = query(collection(db, 'requests'), orderBy('request_number', 'desc'), limit(1));
+      const querySnapshot = await getDocs(q);
 
       let nextNumber = 1;
-      if (data && data.length > 0) {
-        const lastNumber = parseInt(data[0].request_number);
+      if (!querySnapshot.empty) {
+        const lastDoc = querySnapshot.docs[0];
+        const lastNumber = parseInt(lastDoc.data().request_number);
         nextNumber = lastNumber + 1;
       }
 
@@ -67,22 +64,18 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
 
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('requests')
-        .select('*')
-        .eq('id', requestId)
-        .single();
-
-      if (error) throw error;
-
-      setRequestNumber(data.request_number);
-      setTitle(data.title);
-      setRequestType(data.request_type);
-      setStatus(data.status);
-      setDueDate(data.due_date || '');
-      setDetails(data.details || '');
-      setClientId(data.client_id || '');
-      setCreatedAt(data.created_at);
+      const requestDoc = await getDoc(doc(db, 'requests', requestId));
+      if (requestDoc.exists()) {
+        const data = requestDoc.data();
+        setRequestNumber(data.request_number);
+        setTitle(data.title);
+        setRequestType(data.request_type);
+        setStatus(data.status);
+        setDueDate(data.due_date || '');
+        setDetails(data.details || '');
+        setClientId(data.client_id || '');
+        setCreatedAt(data.created_at);
+      }
     } catch (error) {
       console.error('Error loading request:', error);
     } finally {
@@ -109,26 +102,20 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         title,
         request_type: requestType,
         status,
-        due_date: dueDate || null,
+        due_date: dueDate || '',
         details,
-        client_id: clientId || null,
-        created_by: user!.id,
+        client_id: clientId || '',
+        created_by: user!.uid,
         updated_at: new Date().toISOString(),
       };
 
       if (requestId) {
-        const { error } = await supabase
-          .from('requests')
-          .update(requestData)
-          .eq('id', requestId);
-
-        if (error) throw error;
+        await updateDoc(doc(db, 'requests', requestId), requestData);
       } else {
-        const { error } = await supabase
-          .from('requests')
-          .insert({ ...requestData, created_at: createdAt });
-
-        if (error) throw error;
+        await addDoc(collection(db, 'requests'), {
+          ...requestData,
+          created_at: createdAt,
+        });
       }
 
       setHasChanges(false);

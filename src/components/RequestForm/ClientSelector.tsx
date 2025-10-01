@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { supabase, Client } from '../../lib/supabase';
+import { db, Client } from '../../lib/firebase';
+import { collection, query, orderBy, getDocs, addDoc } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
 import { Plus, X } from 'lucide-react';
 
@@ -26,13 +27,13 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({ selectedClientId
 
   const loadClients = async () => {
     try {
-      const { data, error } = await supabase
-        .from('clients')
-        .select('*')
-        .order('name');
-
-      if (error) throw error;
-      setClients(data || []);
+      const q = query(collection(db, 'clients'), orderBy('name'));
+      const querySnapshot = await getDocs(q);
+      const clientsData: Client[] = [];
+      querySnapshot.forEach((doc) => {
+        clientsData.push({ id: doc.id, ...doc.data() } as Client);
+      });
+      setClients(clientsData);
     } catch (error) {
       console.error('Error loading clients:', error);
     }
@@ -45,19 +46,23 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({ selectedClientId
     }
 
     try {
-      const { data, error } = await supabase
-        .from('clients')
-        .insert({
-          ...newClient,
-          created_by: user!.id,
-        })
-        .select()
-        .single();
+      const docRef = await addDoc(collection(db, 'clients'), {
+        ...newClient,
+        created_by: user!.uid,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
 
-      if (error) throw error;
+      const newClientData = {
+        id: docRef.id,
+        ...newClient,
+        created_by: user!.uid,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
 
-      setClients([...clients, data]);
-      onChange(data.id);
+      setClients([...clients, newClientData]);
+      onChange(docRef.id);
       setShowNewClientForm(false);
       setNewClient({ name: '', company: '', email: '', phone: '', notes: '' });
     } catch (error) {

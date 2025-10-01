@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { supabase, Request } from '../../lib/supabase';
+import { db, Request } from '../../lib/firebase';
+import { collection, query, orderBy, getDocs, doc, getDoc, setDoc } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
 import { Search, RefreshCw, Plus, Pin } from 'lucide-react';
 import { RequestItem } from './RequestItem';
@@ -44,17 +45,13 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
 
   const loadPinnedFilters = async () => {
     try {
-      const { data, error } = await supabase
-        .from('user_filter_preferences')
-        .select('pinned_filters')
-        .eq('user_id', user!.id)
-        .maybeSingle();
-
-      if (error) throw error;
-
-      if (data && data.pinned_filters) {
-        setSelectedFilters(data.pinned_filters as string[]);
-        setIsPinned(true);
+      const prefDoc = await getDoc(doc(db, 'user_filter_preferences', user!.uid));
+      if (prefDoc.exists()) {
+        const data = prefDoc.data();
+        if (data.pinned_filters) {
+          setSelectedFilters(data.pinned_filters as string[]);
+          setIsPinned(true);
+        }
       }
     } catch (error) {
       console.error('Error loading pinned filters:', error);
@@ -63,15 +60,11 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
 
   const savePinnedFilters = async () => {
     try {
-      const { error } = await supabase
-        .from('user_filter_preferences')
-        .upsert({
-          user_id: user!.id,
-          pinned_filters: selectedFilters,
-          updated_at: new Date().toISOString(),
-        });
-
-      if (error) throw error;
+      await setDoc(doc(db, 'user_filter_preferences', user!.uid), {
+        user_id: user!.uid,
+        pinned_filters: selectedFilters,
+        updated_at: new Date().toISOString(),
+      });
       setIsPinned(true);
     } catch (error) {
       console.error('Error saving pinned filters:', error);
@@ -81,13 +74,13 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
   const loadRequests = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('requests')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setRequests(data || []);
+      const q = query(collection(db, 'requests'), orderBy('created_at', 'desc'));
+      const querySnapshot = await getDocs(q);
+      const requestsData: Request[] = [];
+      querySnapshot.forEach((doc) => {
+        requestsData.push({ id: doc.id, ...doc.data() } as Request);
+      });
+      setRequests(requestsData);
     } catch (error) {
       console.error('Error loading requests:', error);
     } finally {
