@@ -24,7 +24,10 @@ export const RequestItem: React.FC<RequestItemProps> = ({ request, onClick }) =>
   };
 
   return (
-    <>
+    <div
+      onClick={onClick}
+      className="grid grid-cols-[120px_1fr_120px_140px_140px_160px] gap-4 px-6 py-4 hover:bg-slate-50 cursor-pointer transition"
+    >
       <div className="text-sm font-medium text-slate-900">{request.request_number}</div>
       <div className="text-sm text-slate-900 truncate">{request.title}</div>
       <div className="text-sm text-slate-600">{formatDate(request.due_date)}</div>
@@ -35,6 +38,6 @@ export const RequestItem: React.FC<RequestItemProps> = ({ request, onClick }) =>
       </div>
       <div className="text-sm text-slate-600">{request.request_type}</div>
       <div className="text-sm text-slate-600">{(request as any).creator_name || '-'}</div>
-    </>
+    </div>
   );
 };
