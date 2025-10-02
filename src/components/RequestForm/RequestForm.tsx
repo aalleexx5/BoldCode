@@ -190,7 +190,6 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
           });
         }
 
-        setPendingLinks([]);
         setHasChanges(false);
         onSave(docRef.id);
       }

@@ -17,12 +17,12 @@ export const LinksSection: React.FC<LinksSectionProps> = ({ requestId, links, on
     comments: '',
   });
 
+
   useEffect(() => {
     if (requestId) {
+      // When we have a requestId, load links from Firebase
+      // This will replace any temporary links with the persisted ones
       loadLinks();
-    } else {
-      // Clear links when there's no requestId
-      onLinksChange([]);
     }
   }, [requestId]);
 
