@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { db, Request, RequestLink } from '../../lib/firebase';
-import { collection, query, orderBy, limit, getDocs, doc, getDoc, addDoc, updateDoc } from 'firebase/firestore';
+import { collection, query, orderBy, limit, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
-import { X, Save, Copy } from 'lucide-react';
+import { X, Save, Copy, Trash2 } from 'lucide-react';
 import { ClientSelector } from './ClientSelector';
 import { LinksSection } from './LinksSection';
 import { CommentsSection } from './CommentsSection';
@@ -207,6 +207,27 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
     }
   };
 
+  const handleDelete = async () => {
+    if (!requestId) return;
+
+    const confirmDelete = window.confirm(
+      'Are you sure you want to delete this request? This action cannot be undone.'
+    );
+
+    if (!confirmDelete) return;
+
+    setLoading(true);
+    try {
+      await deleteDoc(doc(db, 'requests', requestId));
+      alert('Request deleted successfully');
+      onClose();
+    } catch (error) {
+      console.error('Error deleting request:', error);
+      alert('Failed to delete request. Please try again.');
+      setLoading(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -226,14 +247,24 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
             </div>
             <div className="flex items-center gap-3">
               {requestId && (
-                <button
-                  onClick={handleClone}
-                  disabled={loading}
-                  className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition font-medium disabled:opacity-50"
-                >
-                  <Copy className="w-4 h-4" />
-                  Clone
-                </button>
+                <>
+                  <button
+                    onClick={handleDelete}
+                    disabled={loading}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium disabled:opacity-50"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete
+                  </button>
+                  <button
+                    onClick={handleClone}
+                    disabled={loading}
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition font-medium disabled:opacity-50"
+                  >
+                    <Copy className="w-4 h-4" />
+                    Clone
+                  </button>
+                </>
               )}
               <button
                 onClick={handleSave}
@@ -351,14 +382,14 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
                   />
                 </div>
 
-                {requestId && <LinksSection
+                <LinksSection
                   requestId={requestId}
                   links={pendingLinks}
                   onLinksChange={(links) => {
                     setPendingLinks(links);
                     setHasChanges(true);
                   }}
-                />}
+                />
               </div>
 
               <div className="space-y-6">
