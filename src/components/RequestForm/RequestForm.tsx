@@ -172,6 +172,8 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
 
       if (requestId) {
         await updateDoc(doc(db, 'requests', requestId), requestData);
+        setHasChanges(false);
+        onSave();
       } else {
         const docRef = await addDoc(collection(db, 'requests'), {
           ...requestData,
@@ -187,10 +189,11 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
             created_at: link.created_at,
           });
         }
-      }
 
-      setHasChanges(false);
-      onSave();
+        setPendingLinks([]);
+        setHasChanges(false);
+        onSave(docRef.id);
+      }
     } catch (error) {
       console.error('Error saving request:', error);
       alert('Failed to save request. Please try again.');

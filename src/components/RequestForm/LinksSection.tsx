@@ -20,6 +20,9 @@ export const LinksSection: React.FC<LinksSectionProps> = ({ requestId, links, on
   useEffect(() => {
     if (requestId) {
       loadLinks();
+    } else {
+      // Clear links when there's no requestId
+      onLinksChange([]);
     }
   }, [requestId]);
 
