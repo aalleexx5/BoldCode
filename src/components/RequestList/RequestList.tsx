@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { db, Request } from '../../lib/firebase';
-import { collection, query, orderBy, getDocs, doc, getDoc, setDoc } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, doc, getDoc, setDoc, writeBatch } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
-import { Search, RefreshCw, Plus, Pin, ArrowUpDown } from 'lucide-react';
+import { Search, RefreshCw, Plus, Pin, ArrowUpDown, CheckSquare, Square } from 'lucide-react';
 import { RequestItem } from './RequestItem';
 
 type SortField = 'request_number' | 'title' | 'due_date' | 'status' | 'request_type' | 'creator_name';
@@ -35,6 +35,9 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
   const [isPinned, setIsPinned] = useState(false);
   const [sortField, setSortField] = useState<SortField>('request_number');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [selectedRequests, setSelectedRequests] = useState<Set<string>>(new Set());
+  const [bulkStatus, setBulkStatus] = useState<string>('');
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -154,6 +157,48 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
     }
   };
 
+  const toggleSelectRequest = (requestId: string) => {
+    setSelectedRequests((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(requestId)) {
+        newSet.delete(requestId);
+      } else {
+        newSet.add(requestId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedRequests.size === filteredRequests.length) {
+      setSelectedRequests(new Set());
+    } else {
+      setSelectedRequests(new Set(filteredRequests.map((r) => r.id)));
+    }
+  };
+
+  const handleBulkStatusUpdate = async () => {
+    if (!bulkStatus || selectedRequests.size === 0) return;
+
+    setIsUpdating(true);
+    try {
+      const batch = writeBatch(db);
+      selectedRequests.forEach((requestId) => {
+        const requestRef = doc(db, 'requests', requestId);
+        batch.update(requestRef, { status: bulkStatus });
+      });
+      await batch.commit();
+      setSelectedRequests(new Set());
+      setBulkStatus('');
+      await loadRequests();
+    } catch (error) {
+      console.error('Error updating requests:', error);
+      alert('Failed to update requests. Please try again.');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   return (
     <div className="flex-1 flex flex-col bg-slate-50">
       <div className="bg-white border-b border-slate-200 p-6">
@@ -237,7 +282,52 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
           </div>
         ) : (
           <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-            <div className="grid grid-cols-[120px_1fr_120px_140px_140px_160px] gap-4 px-6 py-4 bg-slate-50 border-b border-slate-200 font-medium text-sm text-slate-700">
+            {selectedRequests.size > 0 && (
+              <div className="bg-blue-50 border-b border-blue-200 px-6 py-4">
+                <div className="flex items-center gap-4">
+                  <span className="text-sm font-medium text-blue-900">
+                    {selectedRequests.size} selected
+                  </span>
+                  <select
+                    value={bulkStatus}
+                    onChange={(e) => setBulkStatus(e.target.value)}
+                    className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">Change status to...</option>
+                    {STATUS_OPTIONS.map((status) => (
+                      <option key={status.value} value={status.value}>
+                        {status.label}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={handleBulkStatusUpdate}
+                    disabled={!bulkStatus || isUpdating}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium disabled:bg-slate-300 disabled:cursor-not-allowed text-sm"
+                  >
+                    {isUpdating ? 'Updating...' : 'Update Status'}
+                  </button>
+                  <button
+                    onClick={() => setSelectedRequests(new Set())}
+                    className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition font-medium text-sm"
+                  >
+                    Clear Selection
+                  </button>
+                </div>
+              </div>
+            )}
+            <div className="grid grid-cols-[50px_120px_1fr_120px_140px_140px_160px] gap-4 px-6 py-4 bg-slate-50 border-b border-slate-200 font-medium text-sm text-slate-700">
+              <button
+                onClick={toggleSelectAll}
+                className="flex items-center justify-center hover:text-blue-600 transition"
+                title="Select all"
+              >
+                {selectedRequests.size === filteredRequests.length ? (
+                  <CheckSquare className="w-5 h-5" />
+                ) : (
+                  <Square className="w-5 h-5" />
+                )}
+              </button>
               <button
                 onClick={() => handleSort('request_number')}
                 className="flex items-center gap-1 hover:text-blue-600 transition text-left"
@@ -281,6 +371,8 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
                   key={request.id}
                   request={request}
                   onClick={() => onSelectRequest(request.id)}
+                  isSelected={selectedRequests.has(request.id)}
+                  onToggleSelect={() => toggleSelectRequest(request.id)}
                 />
               ))}
             </div>
