@@ -120,6 +120,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
       const docRef = await addDoc(collection(db, 'requests'), newRequestData);
 
       setLoading(false);
+      alert('Request Successfully Cloned.');
       onSave(docRef.id);
     } catch (error) {
       console.error('Error cloning request:', error);
