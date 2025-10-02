@@ -8,19 +8,20 @@ import { RequestItem } from './RequestItem';
 interface RequestListProps {
   onSelectRequest: (requestId: string) => void;
   onNewRequest: () => void;
+  onNavigateToClients: () => void;
   refreshTrigger: number;
 }
 
 const STATUS_OPTIONS = [
   { value: 'submitted', label: 'Submitted' },
+  { value: 'draft', label: 'Draft' },
   { value: 'in progress', label: 'In Progress' },
-  { value: 'canceled', label: 'Canceled' },
-  { value: 'pending approval', label: 'Pending Approval' },
   { value: 'awaiting feedback', label: 'Awaiting Feedback' },
   { value: 'completed', label: 'Completed' },
+  { value: 'canceled', label: 'Canceled' },
 ];
 
-export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNewRequest, refreshTrigger }) => {
+export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNewRequest, onNavigateToClients, refreshTrigger }) => {
   const { user } = useAuth();
   const [requests, setRequests] = useState<Request[]>([]);
   const [filteredRequests, setFilteredRequests] = useState<Request[]>([]);
@@ -77,9 +78,16 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
       const q = query(collection(db, 'requests'), orderBy('created_at', 'desc'));
       const querySnapshot = await getDocs(q);
       const requestsData: Request[] = [];
-      querySnapshot.forEach((doc) => {
-        requestsData.push({ id: doc.id, ...doc.data() } as Request);
-      });
+
+      for (const docSnap of querySnapshot.docs) {
+        const requestData = { id: docSnap.id, ...docSnap.data() } as Request;
+        const userDoc = await getDoc(doc(db, 'profiles', requestData.created_by));
+        if (userDoc.exists()) {
+          (requestData as any).creator_name = userDoc.data().full_name;
+        }
+        requestsData.push(requestData);
+      }
+
       setRequests(requestsData);
     } catch (error) {
       console.error('Error loading requests:', error);
@@ -138,6 +146,12 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
               <RefreshCw className="w-5 h-5" />
             </button>
             <button
+              onClick={onNavigateToClients}
+              className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition font-medium"
+            >
+              Clients
+            </button>
+            <button
               onClick={onNewRequest}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
             >
@@ -167,7 +181,7 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
           <button
             onClick={savePinnedFilters}
             disabled={isPinned}
-            className={`ml-auto flex items-center gap-2 px-4 py-2 rounded-lg transition font-medium ${
+            className={`p-2 rounded-lg transition ${
               isPinned
                 ? 'bg-green-100 text-green-700 cursor-default'
                 : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
@@ -175,7 +189,6 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
             title="Pin current filter selection"
           >
             <Pin className="w-4 h-4" />
-            {isPinned ? 'Filters Pinned' : 'Pin Filters'}
           </button>
         </div>
       </div>
@@ -192,12 +205,13 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
           </div>
         ) : (
           <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-            <div className="grid grid-cols-[120px_1fr_120px_140px_140px] gap-4 px-6 py-4 bg-slate-50 border-b border-slate-200 font-medium text-sm text-slate-700">
+            <div className="grid grid-cols-[120px_1fr_120px_140px_140px_160px] gap-4 px-6 py-4 bg-slate-50 border-b border-slate-200 font-medium text-sm text-slate-700">
               <div>Request #</div>
               <div>Title</div>
               <div>Due Date</div>
               <div>Status</div>
               <div>Type</div>
+              <div>Created By</div>
             </div>
             <div className="divide-y divide-slate-200">
               {filteredRequests.map((request) => (

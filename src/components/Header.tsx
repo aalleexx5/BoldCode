@@ -1,20 +1,30 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { FileText, ChevronDown, LogOut, User } from 'lucide-react';
+import { ChevronDown, LogOut, User } from 'lucide-react';
 
-export const Header: React.FC = () => {
+interface HeaderProps {
+  currentPage: 'requests' | 'clients';
+  onNavigate: (page: 'requests' | 'clients') => void;
+}
+
+export const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate }) => {
   const { profile, signOut } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
 
   return (
     <header className="bg-white border-b border-slate-200 px-6 py-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="bg-blue-600 p-2 rounded-lg">
-            <FileText className="w-6 h-6 text-white" />
-          </div>
+        <button
+          onClick={() => onNavigate('requests')}
+          className="flex items-center gap-3 hover:opacity-80 transition"
+        >
+          <img
+            src="https://illicitgraphics.com/wp-content/uploads/2025/10/Bold-Code-Cube.png"
+            alt="Logo"
+            className="w-10 h-10 object-contain"
+          />
           <h1 className="text-xl font-bold text-slate-800">Request Tracker</h1>
-        </div>
+        </button>
 
         <div className="relative">
           <button

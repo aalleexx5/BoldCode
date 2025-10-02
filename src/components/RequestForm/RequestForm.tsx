@@ -14,7 +14,7 @@ interface RequestFormProps {
 }
 
 const REQUEST_TYPES = ['animation', 'web design', 'edit', 'social media', 'presentation', 'text copy'];
-const STATUS_OPTIONS = ['submitted', 'in progress', 'awaiting feedback', 'pending approval', 'canceled', 'completed'];
+const STATUS_OPTIONS = ['submitted', 'draft', 'in progress', 'awaiting feedback', 'completed', 'canceled'];
 
 export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, onSave }) => {
   const { user } = useAuth();

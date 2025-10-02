@@ -40,13 +40,33 @@ export type Request = {
   request_number: string;
   title: string;
   request_type: 'animation' | 'web design' | 'edit' | 'social media' | 'presentation' | 'text copy';
-  status: 'submitted' | 'in progress' | 'canceled' | 'pending approval' | 'awaiting feedback' | 'completed';
+  status: 'submitted' | 'draft' | 'in progress' | 'canceled' | 'pending approval' | 'awaiting feedback' | 'completed';
   due_date: string;
   details: string;
   client_id: string | null;
   created_by: string;
   created_at: string;
   updated_at: string;
+};
+
+export type CostTracker = {
+  id: string;
+  request_id: string;
+  time_spent: number;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ActivityLog = {
+  id: string;
+  request_id: string;
+  user_id: string;
+  action_type: 'created' | 'status_change' | 'due_date_change' | 'details_change';
+  old_value?: string;
+  new_value?: string;
+  created_at: string;
+  user?: Profile;
 };
 
 export type RequestLink = {

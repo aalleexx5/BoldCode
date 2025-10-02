@@ -95,13 +95,56 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({ selectedClientId
         </div>
 
         {!showNewClientForm ? (
-          <button
-            onClick={() => setShowNewClientForm(true)}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 border-2 border-dashed border-slate-300 text-slate-600 rounded-lg hover:border-slate-400 hover:text-slate-700 transition"
-          >
-            <Plus className="w-4 h-4" />
-            Add New Client
-          </button>
+          <>
+            <button
+              onClick={() => setShowNewClientForm(true)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 border-2 border-dashed border-slate-300 text-slate-600 rounded-lg hover:border-slate-400 hover:text-slate-700 transition"
+            >
+              <Plus className="w-4 h-4" />
+              Add New Client
+            </button>
+
+            {selectedClientId && clients.find(c => c.id === selectedClientId) && (
+              <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
+                <h4 className="font-medium text-slate-800 mb-3">Selected Client Details</h4>
+                {(() => {
+                  const client = clients.find(c => c.id === selectedClientId)!;
+                  return (
+                    <div className="space-y-2 text-sm">
+                      <div>
+                        <span className="font-medium text-slate-700">Name:</span>
+                        <span className="ml-2 text-slate-600">{client.name}</span>
+                      </div>
+                      {client.company && (
+                        <div>
+                          <span className="font-medium text-slate-700">Company:</span>
+                          <span className="ml-2 text-slate-600">{client.company}</span>
+                        </div>
+                      )}
+                      {client.email && (
+                        <div>
+                          <span className="font-medium text-slate-700">Email:</span>
+                          <span className="ml-2 text-slate-600">{client.email}</span>
+                        </div>
+                      )}
+                      {client.phone && (
+                        <div>
+                          <span className="font-medium text-slate-700">Phone:</span>
+                          <span className="ml-2 text-slate-600">{client.phone}</span>
+                        </div>
+                      )}
+                      {client.notes && (
+                        <div>
+                          <span className="font-medium text-slate-700">Notes:</span>
+                          <p className="mt-1 text-slate-600">{client.notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+          </>
         ) : (
           <div className="border border-slate-200 rounded-lg p-4 space-y-3">
             <div className="flex items-center justify-between mb-3">
