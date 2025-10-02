@@ -1,3 +1,38 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.rich-text-editor .quill {
+  display: flex;
+  flex-direction: column;
+  height: 400px;
+}
+
+.rich-text-editor .ql-container {
+  flex: 1;
+  overflow-y: auto;
+  font-size: 14px;
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+}
+
+.rich-text-editor .ql-toolbar {
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.rich-text-editor .ql-container {
+  border-color: #cbd5e1;
+}
+
+.rich-text-editor .ql-editor {
+  padding: 1rem;
+  min-height: 100%;
+}
+
+.rich-text-editor .ql-editor.ql-blank::before {
+  color: #94a3b8;
+  font-style: normal;
+}
