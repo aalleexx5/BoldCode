@@ -7,7 +7,6 @@ import { ClientSelector } from './ClientSelector';
 import { LinksSection } from './LinksSection';
 import { CommentsSection } from './CommentsSection';
 import { CostTrackerSection } from './CostTrackerSection';
-import { RichTextEditor } from '../RichTextEditor/RichTextEditor';
 
 interface RequestFormProps {
   requestId?: string;
@@ -367,12 +366,14 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
 
                 <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
                   <h3 className="text-lg font-semibold text-slate-800 mb-4">Request Details</h3>
-                  <RichTextEditor
+                  <textarea
                     value={details}
-                    onChange={(value) => {
-                      setDetails(value);
+                    onChange={(e) => {
+                      setDetails(e.target.value);
                       setHasChanges(true);
                     }}
+                    rows={12}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                     placeholder="Enter detailed description of the request..."
                   />
                 </div>
