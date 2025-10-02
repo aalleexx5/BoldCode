@@ -6,6 +6,7 @@ import { X, Save, Copy } from 'lucide-react';
 import { ClientSelector } from './ClientSelector';
 import { LinksSection } from './LinksSection';
 import { CommentsSection } from './CommentsSection';
+import { CostTrackerSection } from './CostTrackerSection';
 
 interface RequestFormProps {
   requestId?: string;
@@ -350,14 +351,14 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
                   />
                 </div>
 
-                <LinksSection
+                {requestId && <LinksSection
                   requestId={requestId}
                   links={pendingLinks}
                   onLinksChange={(links) => {
                     setPendingLinks(links);
                     setHasChanges(true);
                   }}
-                />
+                />}
               </div>
 
               <div className="space-y-6">
@@ -370,6 +371,8 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
                 />
 
                 {requestId && <CommentsSection requestId={requestId} />}
+
+                {requestId && <CostTrackerSection requestId={requestId} />}
               </div>
             </div>
           </div>
