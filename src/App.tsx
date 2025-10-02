@@ -37,10 +37,16 @@ const AppContent: React.FC = () => {
     );
   }
 
-  const handleSaveRequest = () => {
-    setSelectedRequestId(undefined);
-    setShowNewRequest(false);
-    setRefreshTrigger((prev) => prev + 1);
+  const handleSaveRequest = (newRequestId?: string) => {
+    if (newRequestId) {
+      setSelectedRequestId(newRequestId);
+      setShowNewRequest(false);
+      setRefreshTrigger((prev) => prev + 1);
+    } else {
+      setSelectedRequestId(undefined);
+      setShowNewRequest(false);
+      setRefreshTrigger((prev) => prev + 1);
+    }
   };
 
   const handleCloseRequest = () => {

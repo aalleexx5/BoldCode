@@ -10,7 +10,7 @@ import { CommentsSection } from './CommentsSection';
 interface RequestFormProps {
   requestId?: string;
   onClose: () => void;
-  onSave: () => void;
+  onSave: (newRequestId?: string) => void;
 }
 
 const REQUEST_TYPES = ['animation', 'web design', 'edit', 'social media', 'presentation', 'text copy'];
@@ -120,8 +120,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
       const docRef = await addDoc(collection(db, 'requests'), newRequestData);
 
       setLoading(false);
-      alert(`Request cloned successfully! New Request #${newRequestNumber}`);
-      onSave();
+      onSave(docRef.id);
     } catch (error) {
       console.error('Error cloning request:', error);
       alert('Failed to clone request. Please try again.');
