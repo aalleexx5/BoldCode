@@ -84,9 +84,68 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
   };
 
   const handleClone = async () => {
-    await generateRequestNumber();
-    setCreatedAt(new Date().toISOString());
-    setHasChanges(true);
+    if (!requestId) {
+      alert('Request must be saved before cloning.');
+      return;
+    }
+
+    if (hasChanges) {
+      alert('Please save your changes before cloning this request.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      await updateDoc(doc(db, 'requests', requestId), {
+        status: 'completed',
+        updated_at: new Date().toISOString(),
+      });
+
+      const newRequestNumber = await getNextRequestNumber();
+
+      const newRequestData = {
+        request_number: newRequestNumber,
+        title,
+        request_type: requestType,
+        status: 'submitted',
+        due_date: dueDate || '',
+        details,
+        client_id: clientId || '',
+        created_by: user!.uid,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      const docRef = await addDoc(collection(db, 'requests'), newRequestData);
+
+      setLoading(false);
+      alert(`Request cloned successfully! New Request #${newRequestNumber}`);
+      onSave();
+    } catch (error) {
+      console.error('Error cloning request:', error);
+      alert('Failed to clone request. Please try again.');
+      setLoading(false);
+    }
+  };
+
+  const getNextRequestNumber = async () => {
+    try {
+      const q = query(collection(db, 'requests'), orderBy('request_number', 'desc'), limit(1));
+      const querySnapshot = await getDocs(q);
+
+      let nextNumber = 1;
+      if (!querySnapshot.empty) {
+        const lastDoc = querySnapshot.docs[0];
+        const lastNumber = parseInt(lastDoc.data().request_number);
+        nextNumber = lastNumber + 1;
+      }
+
+      return String(nextNumber).padStart(4, '0');
+    } catch (error) {
+      console.error('Error generating request number:', error);
+      return '0001';
+    }
   };
 
   const handleSave = async () => {
@@ -157,7 +216,8 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
               {requestId && (
                 <button
                   onClick={handleClone}
-                  className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition font-medium"
+                  disabled={loading}
+                  className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition font-medium disabled:opacity-50"
                 >
                   <Copy className="w-4 h-4" />
                   Clone
