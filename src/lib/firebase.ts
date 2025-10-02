@@ -48,7 +48,7 @@ export type Request = {
   request_number: string;
   title: string;
   request_type: 'animation' | 'web design' | 'edit' | 'social media' | 'presentation' | 'text copy';
-  status: 'submitted' | 'draft' | 'in progress' | 'canceled' | 'pending approval' | 'awaiting feedback' | 'completed';
+  status: 'submitted' | 'draft' | 'in progress' | 'awaiting feedback' | 'pending approval' | 'completed' | 'canceled';
   due_date: string;
   details: string;
   client_id: string | null;

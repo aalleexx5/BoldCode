@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { db, Request } from '../../lib/firebase';
 import { collection, query, orderBy, getDocs, doc, getDoc, setDoc } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
-import { Search, RefreshCw, Plus, Pin } from 'lucide-react';
+import { Search, RefreshCw, Plus, Pin, ArrowUpDown } from 'lucide-react';
 import { RequestItem } from './RequestItem';
+
+type SortField = 'request_number' | 'title' | 'due_date' | 'status' | 'request_type' | 'creator_name';
+type SortDirection = 'asc' | 'desc';
 
 interface RequestListProps {
   onSelectRequest: (requestId: string) => void;
@@ -17,6 +20,7 @@ const STATUS_OPTIONS = [
   { value: 'draft', label: 'Draft' },
   { value: 'in progress', label: 'In Progress' },
   { value: 'awaiting feedback', label: 'Awaiting Feedback' },
+  { value: 'pending approval', label: 'Pending Approval' },
   { value: 'completed', label: 'Completed' },
   { value: 'canceled', label: 'Canceled' },
 ];
@@ -29,6 +33,8 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [isPinned, setIsPinned] = useState(false);
+  const [sortField, setSortField] = useState<SortField>('request_number');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   useEffect(() => {
     if (user) {
@@ -42,7 +48,7 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
 
   useEffect(() => {
     applyFilters();
-  }, [requests, searchQuery, selectedFilters]);
+  }, [requests, searchQuery, selectedFilters, sortField, sortDirection]);
 
   const loadPinnedFilters = async () => {
     try {
@@ -112,6 +118,23 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
       );
     }
 
+    filtered.sort((a, b) => {
+      let aValue: any = a[sortField];
+      let bValue: any = b[sortField];
+
+      if (sortField === 'creator_name') {
+        aValue = (a as any).creator_name || '';
+        bValue = (b as any).creator_name || '';
+      }
+
+      if (!aValue) aValue = '';
+      if (!bValue) bValue = '';
+
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
     setFilteredRequests(filtered);
   };
 
@@ -120,6 +143,15 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
       prev.includes(status) ? prev.filter((s) => s !== status) : [...prev, status]
     );
     setIsPinned(false);
+  };
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
   };
 
   return (
@@ -206,12 +238,42 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
         ) : (
           <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
             <div className="grid grid-cols-[120px_1fr_120px_140px_140px_160px] gap-4 px-6 py-4 bg-slate-50 border-b border-slate-200 font-medium text-sm text-slate-700">
-              <div>Request #</div>
-              <div>Title</div>
-              <div>Due Date</div>
-              <div>Status</div>
-              <div>Type</div>
-              <div>Created By</div>
+              <button
+                onClick={() => handleSort('request_number')}
+                className="flex items-center gap-1 hover:text-blue-600 transition text-left"
+              >
+                Request # <ArrowUpDown className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => handleSort('title')}
+                className="flex items-center gap-1 hover:text-blue-600 transition text-left"
+              >
+                Title <ArrowUpDown className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => handleSort('due_date')}
+                className="flex items-center gap-1 hover:text-blue-600 transition text-left"
+              >
+                Due Date <ArrowUpDown className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => handleSort('status')}
+                className="flex items-center gap-1 hover:text-blue-600 transition text-left"
+              >
+                Status <ArrowUpDown className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => handleSort('request_type')}
+                className="flex items-center gap-1 hover:text-blue-600 transition text-left"
+              >
+                Type <ArrowUpDown className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => handleSort('creator_name')}
+                className="flex items-center gap-1 hover:text-blue-600 transition text-left"
+              >
+                Created By <ArrowUpDown className="w-4 h-4" />
+              </button>
             </div>
             <div className="divide-y divide-slate-200">
               {filteredRequests.map((request) => (
