@@ -5,6 +5,10 @@ import { Register } from './components/Auth/Register';
 import { Header } from './components/Header';
 import { RequestList } from './components/RequestList/RequestList';
 import { RequestForm } from './components/RequestForm/RequestForm';
+import { Profile } from './components/Profile/Profile';
+import { ClientList } from './components/Clients/ClientList';
+import { ClientDetail } from './components/Clients/ClientDetail';
+import { NewClientModal } from './components/Clients/NewClientModal';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
@@ -12,6 +16,9 @@ const AppContent: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<'requests' | 'clients'>('requests');
   const [selectedRequestId, setSelectedRequestId] = useState<string | undefined>();
   const [showNewRequest, setShowNewRequest] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState<string | undefined>();
+  const [showNewClient, setShowNewClient] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   if (loading) {
@@ -41,11 +48,22 @@ const AppContent: React.FC = () => {
     setShowNewRequest(false);
   };
 
+  const handleSaveClient = () => {
+    setSelectedClientId(undefined);
+    setShowNewClient(false);
+    setRefreshTrigger((prev) => prev + 1);
+  };
+
+  const handleCloseClient = () => {
+    setSelectedClientId(undefined);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
       <Header
         currentPage={currentPage}
         onNavigate={setCurrentPage}
+        onOpenProfile={() => setShowProfile(true)}
       />
       {currentPage === 'requests' ? (
         selectedRequestId || showNewRequest ? (
@@ -62,8 +80,25 @@ const AppContent: React.FC = () => {
             refreshTrigger={refreshTrigger}
           />
         )
+      ) : selectedClientId ? (
+        <ClientDetail
+          clientId={selectedClientId}
+          onClose={handleCloseClient}
+          onSave={handleSaveClient}
+        />
       ) : (
-        <div>Clients Page Placeholder</div>
+        <ClientList
+          onSelectClient={setSelectedClientId}
+          onNewClient={() => setShowNewClient(true)}
+          onNavigateToRequests={() => setCurrentPage('requests')}
+        />
+      )}
+      {showProfile && <Profile onClose={() => setShowProfile(false)} />}
+      {showNewClient && (
+        <NewClientModal
+          onClose={() => setShowNewClient(false)}
+          onSave={handleSaveClient}
+        />
       )}
     </div>
   );

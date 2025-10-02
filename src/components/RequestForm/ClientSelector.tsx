@@ -14,8 +14,8 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({ selectedClientId
   const [clients, setClients] = useState<Client[]>([]);
   const [showNewClientForm, setShowNewClientForm] = useState(false);
   const [newClient, setNewClient] = useState({
-    name: '',
     company: '',
+    contact_name: '',
     email: '',
     phone: '',
     notes: '',
@@ -27,7 +27,7 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({ selectedClientId
 
   const loadClients = async () => {
     try {
-      const q = query(collection(db, 'clients'), orderBy('name'));
+      const q = query(collection(db, 'clients'), orderBy('company'));
       const querySnapshot = await getDocs(q);
       const clientsData: Client[] = [];
       querySnapshot.forEach((doc) => {
@@ -40,8 +40,8 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({ selectedClientId
   };
 
   const handleAddClient = async () => {
-    if (!newClient.name.trim()) {
-      alert('Please enter a client name');
+    if (!newClient.company.trim()) {
+      alert('Please enter a company name');
       return;
     }
 
@@ -64,7 +64,7 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({ selectedClientId
       setClients([...clients, newClientData]);
       onChange(docRef.id);
       setShowNewClientForm(false);
-      setNewClient({ name: '', company: '', email: '', phone: '', notes: '' });
+      setNewClient({ company: '', contact_name: '', email: '', phone: '', notes: '' });
     } catch (error) {
       console.error('Error adding client:', error);
       alert('Failed to add client. Please try again.');
@@ -88,7 +88,7 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({ selectedClientId
             <option value="">No client selected</option>
             {clients.map((client) => (
               <option key={client.id} value={client.id}>
-                {client.name} {client.company && `(${client.company})`}
+                {client.company} {client.contact_name && `- ${client.contact_name}`}
               </option>
             ))}
           </select>
@@ -111,14 +111,16 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({ selectedClientId
                   const client = clients.find(c => c.id === selectedClientId)!;
                   return (
                     <div className="space-y-2 text-sm">
-                      <div>
-                        <span className="font-medium text-slate-700">Name:</span>
-                        <span className="ml-2 text-slate-600">{client.name}</span>
-                      </div>
                       {client.company && (
                         <div>
                           <span className="font-medium text-slate-700">Company:</span>
                           <span className="ml-2 text-slate-600">{client.company}</span>
+                        </div>
+                      )}
+                      {client.contact_name && (
+                        <div>
+                          <span className="font-medium text-slate-700">Contact Name:</span>
+                          <span className="ml-2 text-slate-600">{client.contact_name}</span>
                         </div>
                       )}
                       {client.email && (
@@ -152,7 +154,7 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({ selectedClientId
               <button
                 onClick={() => {
                   setShowNewClientForm(false);
-                  setNewClient({ name: '', company: '', email: '', phone: '', notes: '' });
+                  setNewClient({ company: '', contact_name: '', email: '', phone: '', notes: '' });
                 }}
                 className="text-slate-400 hover:text-slate-600"
               >
@@ -162,20 +164,7 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({ selectedClientId
 
             <div>
               <label className="block text-xs font-medium text-slate-700 mb-1">
-                Name *
-              </label>
-              <input
-                type="text"
-                value={newClient.name}
-                onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Client name"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">
-                Company
+                Company *
               </label>
               <input
                 type="text"
@@ -183,6 +172,19 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({ selectedClientId
                 onChange={(e) => setNewClient({ ...newClient, company: e.target.value })}
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Company name"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">
+                Contact Name
+              </label>
+              <input
+                type="text"
+                value={newClient.contact_name}
+                onChange={(e) => setNewClient({ ...newClient, contact_name: e.target.value })}
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Contact Name"
               />
             </div>
 

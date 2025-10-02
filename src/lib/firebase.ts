@@ -25,8 +25,8 @@ export type Profile = {
 
 export type Client = {
   id: string;
-  name: string;
   company: string;
+  contact_name: string;
   email: string;
   phone: string;
   notes: string;
