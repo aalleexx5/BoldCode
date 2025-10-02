@@ -8,6 +8,7 @@ import { LinksSection } from './LinksSection';
 import { CommentsSection } from './CommentsSection';
 import { CostTrackerSection } from './CostTrackerSection';
 import { RichTextEditor } from './RichTextEditor';
+import { ActivityTimeline } from './ActivityTimeline';
 
 interface RequestFormProps {
   requestId?: string;
@@ -60,6 +61,9 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
   const [createdAt, setCreatedAt] = useState('');
   const [pendingLinks, setPendingLinks] = useState<RequestLink[]>([]);
   const [comments, setComments] = useState<RequestComment[]>([]);
+  const [originalStatus, setOriginalStatus] = useState<string>('');
+  const [originalDueDate, setOriginalDueDate] = useState<string>('');
+  const [originalDetails, setOriginalDetails] = useState<string>('');
 
   useEffect(() => {
     if (requestId) {
@@ -103,8 +107,11 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         setTitle(data.title);
         setRequestType(data.request_type);
         setStatus(data.status);
+        setOriginalStatus(data.status);
         setDueDate(data.due_date || '');
+        setOriginalDueDate(data.due_date || '');
         setDetails(data.details || '');
+        setOriginalDetails(data.details || '');
         setClientId(data.client_id || '');
         setCreatedAt(data.created_at);
         setPendingLinks(data.links || []);
@@ -174,6 +181,21 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
     }
   };
 
+  const logActivity = async (docId: string, actionType: 'created' | 'status_change' | 'due_date_change' | 'details_change', oldValue?: string, newValue?: string) => {
+    try {
+      await addDoc(collection(db, 'activity_logs'), {
+        request_id: docId,
+        user_id: user!.uid,
+        action_type: actionType,
+        old_value: oldValue,
+        new_value: newValue,
+        created_at: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error('Error logging activity:', error);
+    }
+  };
+
   const handleSave = async () => {
     if (!title.trim()) {
       alert('Please enter a request title');
@@ -198,6 +220,22 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
 
       if (requestId) {
         await updateDoc(doc(db, 'requests', requestId), requestData);
+
+        if (status !== originalStatus) {
+          await logActivity(requestId, 'status_change', originalStatus, status);
+          setOriginalStatus(status);
+        }
+
+        if (dueDate !== originalDueDate) {
+          await logActivity(requestId, 'due_date_change', originalDueDate, dueDate);
+          setOriginalDueDate(dueDate);
+        }
+
+        if (details !== originalDetails) {
+          await logActivity(requestId, 'details_change');
+          setOriginalDetails(details);
+        }
+
         setHasChanges(false);
         onSave();
       } else {
@@ -205,6 +243,8 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
           ...requestData,
           created_at: createdAt,
         });
+
+        await logActivity(docRef.id, 'created');
 
         setHasChanges(false);
         onSave(docRef.id);
@@ -428,6 +468,12 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
                 {requestId && <CostTrackerSection requestId={requestId} />}
               </div>
             </div>
+
+            {requestId && (
+              <div className="mt-6">
+                <ActivityTimeline requestId={requestId} />
+              </div>
+            )}
           </div>
         </div>
       </div>
