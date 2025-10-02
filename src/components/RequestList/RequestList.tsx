@@ -178,17 +178,17 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
               <RefreshCw className="w-5 h-5" />
             </button>
             <button
-              onClick={onNavigateToClients}
-              className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition font-medium"
-            >
-              Clients
-            </button>
-            <button
               onClick={onNewRequest}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
             >
               <Plus className="w-5 h-5" />
               New Request
+            </button>
+            <button
+              onClick={onNavigateToClients}
+              className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition font-medium"
+            >
+              Clients
             </button>
           </div>
         </div>
