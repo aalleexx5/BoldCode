@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db, Request } from '../../lib/firebase';
+import { db, Request, RequestLink } from '../../lib/firebase';
 import { collection, query, orderBy, limit, getDocs, doc, getDoc, addDoc, updateDoc } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
 import { X, Save, Copy } from 'lucide-react';
@@ -30,6 +30,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
   const [details, setDetails] = useState('');
   const [clientId, setClientId] = useState<string>('');
   const [createdAt, setCreatedAt] = useState('');
+  const [pendingLinks, setPendingLinks] = useState<RequestLink[]>([]);
 
   useEffect(() => {
     if (requestId) {
@@ -171,10 +172,20 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
       if (requestId) {
         await updateDoc(doc(db, 'requests', requestId), requestData);
       } else {
-        await addDoc(collection(db, 'requests'), {
+        const docRef = await addDoc(collection(db, 'requests'), {
           ...requestData,
           created_at: createdAt,
         });
+
+        for (const link of pendingLinks) {
+          await addDoc(collection(db, 'request_links'), {
+            request_id: docRef.id,
+            name: link.name,
+            url: link.url,
+            comments: link.comments,
+            created_at: link.created_at,
+          });
+        }
       }
 
       setHasChanges(false);
@@ -339,7 +350,14 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
                   />
                 </div>
 
-                {requestId && <LinksSection requestId={requestId} />}
+                <LinksSection
+                  requestId={requestId}
+                  links={pendingLinks}
+                  onLinksChange={(links) => {
+                    setPendingLinks(links);
+                    setHasChanges(true);
+                  }}
+                />
               </div>
 
               <div className="space-y-6">

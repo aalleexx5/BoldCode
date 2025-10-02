@@ -4,11 +4,12 @@ import { collection, query, where, orderBy, getDocs, addDoc, deleteDoc, doc } fr
 import { Plus, ExternalLink, Trash2, X } from 'lucide-react';
 
 interface LinksSectionProps {
-  requestId: string;
+  requestId?: string;
+  links: RequestLink[];
+  onLinksChange: (links: RequestLink[]) => void;
 }
 
-export const LinksSection: React.FC<LinksSectionProps> = ({ requestId }) => {
-  const [links, setLinks] = useState<RequestLink[]>([]);
+export const LinksSection: React.FC<LinksSectionProps> = ({ requestId, links, onLinksChange }) => {
   const [showNewLinkForm, setShowNewLinkForm] = useState(false);
   const [newLink, setNewLink] = useState({
     name: '',
@@ -17,10 +18,14 @@ export const LinksSection: React.FC<LinksSectionProps> = ({ requestId }) => {
   });
 
   useEffect(() => {
-    loadLinks();
+    if (requestId) {
+      loadLinks();
+    }
   }, [requestId]);
 
   const loadLinks = async () => {
+    if (!requestId) return;
+
     try {
       const q = query(
         collection(db, 'request_links'),
@@ -32,7 +37,7 @@ export const LinksSection: React.FC<LinksSectionProps> = ({ requestId }) => {
       querySnapshot.forEach((doc) => {
         linksData.push({ id: doc.id, ...doc.data() } as RequestLink);
       });
-      setLinks(linksData);
+      onLinksChange(linksData);
     } catch (error) {
       console.error('Error loading links:', error);
     }
@@ -45,15 +50,27 @@ export const LinksSection: React.FC<LinksSectionProps> = ({ requestId }) => {
     }
 
     try {
-      await addDoc(collection(db, 'request_links'), {
-        request_id: requestId,
-        ...newLink,
-        created_at: new Date().toISOString(),
-      });
+      if (requestId) {
+        await addDoc(collection(db, 'request_links'), {
+          request_id: requestId,
+          ...newLink,
+          created_at: new Date().toISOString(),
+        });
+        loadLinks();
+      } else {
+        const tempLink: RequestLink = {
+          id: `temp-${Date.now()}`,
+          request_id: '',
+          name: newLink.name,
+          url: newLink.url,
+          comments: newLink.comments,
+          created_at: new Date().toISOString(),
+        };
+        onLinksChange([...links, tempLink]);
+      }
 
       setNewLink({ name: '', url: '', comments: '' });
       setShowNewLinkForm(false);
-      loadLinks();
     } catch (error) {
       console.error('Error adding link:', error);
       alert('Failed to add link. Please try again.');
@@ -64,8 +81,12 @@ export const LinksSection: React.FC<LinksSectionProps> = ({ requestId }) => {
     if (!confirm('Are you sure you want to delete this link?')) return;
 
     try {
-      await deleteDoc(doc(db, 'request_links', linkId));
-      loadLinks();
+      if (requestId && !linkId.startsWith('temp-')) {
+        await deleteDoc(doc(db, 'request_links', linkId));
+        loadLinks();
+      } else {
+        onLinksChange(links.filter(link => link.id !== linkId));
+      }
     } catch (error) {
       console.error('Error deleting link:', error);
       alert('Failed to delete link. Please try again.');
