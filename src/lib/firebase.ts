@@ -55,7 +55,7 @@ export type Request = {
   id: string;
   request_number: string;
   title: string;
-  request_type: 'animation' | 'web design' | 'edit' | 'social media' | 'presentation' | 'text copy';
+  request_type: 'Animation' | 'Video Editing' | '3D Design' | 'Web Design' | 'Design for Print' | 'Presentation' | 'Market Research' | 'Photography' | 'Videography' | 'Social Media' | 'Digital Marketing' | 'Media Management' | 'Company Events' | 'Brand Design' | 'Brand Management' | 'Pre-Production' | 'Budgeting & Strategy' | 'Team & Logistics' | 'Client Interaction' | 'Directing' | 'Sound Design' | 'Sound Engineering' | 'Project Management' | 'Accounting' | 'Other';
   status: 'submitted' | 'draft' | 'in progress' | 'awaiting feedback' | 'pending approval' | 'completed' | 'canceled';
   due_date: string;
   details: string;

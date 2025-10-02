@@ -36,7 +36,7 @@ export const RequestItem: React.FC<RequestItemProps> = ({ request, onClick }) =>
           {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
         </span>
       </div>
-      <div className="text-sm text-slate-600 capitalize">{request.request_type}</div>
+      <div className="text-sm text-slate-600">{request.request_type}</div>
       <div className="text-sm text-slate-600">{(request as any).creator_name || '-'}</div>
     </div>
   );

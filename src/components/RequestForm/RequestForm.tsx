@@ -15,7 +15,33 @@ interface RequestFormProps {
   onSave: (newRequestId?: string) => void;
 }
 
-const REQUEST_TYPES = ['animation', 'web design', 'edit', 'social media', 'presentation', 'text copy'];
+const REQUEST_TYPES = [
+  'Animation',
+  'Video Editing',
+  '3D Design',
+  'Web Design',
+  'Design for Print',
+  'Presentation',
+  'Market Research',
+  'Photography',
+  'Videography',
+  'Social Media',
+  'Digital Marketing',
+  'Media Management',
+  'Company Events',
+  'Brand Design',
+  'Brand Management',
+  'Pre-Production',
+  'Budgeting & Strategy',
+  'Team & Logistics',
+  'Client Interaction',
+  'Directing',
+  'Sound Design',
+  'Sound Engineering',
+  'Project Management',
+  'Accounting',
+  'Other'
+];
 const STATUS_OPTIONS = ['submitted', 'draft', 'in progress', 'awaiting feedback', 'pending approval', 'completed', 'canceled'];
 
 export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, onSave }) => {
@@ -322,10 +348,10 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
                             setRequestType(e.target.value);
                             setHasChanges(true);
                           }}
-                          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent capitalize"
+                          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
                           {REQUEST_TYPES.map((type) => (
-                            <option key={type} value={type} className="capitalize">
+                            <option key={type} value={type}>
                               {type}
                             </option>
                           ))}
