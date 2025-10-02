@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { db, RequestLink } from '../../lib/firebase';
-import { collection, query, where, orderBy, getDocs, addDoc, deleteDoc, doc } from 'firebase/firestore';
+import React, { useState } from 'react';
+import { RequestLink } from '../../lib/firebase';
 import { Plus, ExternalLink, Trash2, X } from 'lucide-react';
 
 interface LinksSectionProps {
@@ -17,83 +16,28 @@ export const LinksSection: React.FC<LinksSectionProps> = ({ requestId, links, on
     comments: '',
   });
 
-
-  useEffect(() => {
-    if (requestId) {
-      // When we have a requestId, load links from Firebase
-      // This will replace any temporary links with the persisted ones
-      loadLinks();
-    }
-  }, [requestId]);
-
-  const loadLinks = async () => {
-    if (!requestId) return;
-
-    try {
-      const q = query(
-        collection(db, 'request_links'),
-        where('request_id', '==', requestId),
-        orderBy('created_at', 'desc')
-      );
-      const querySnapshot = await getDocs(q);
-      const linksData: RequestLink[] = [];
-      querySnapshot.forEach((doc) => {
-        linksData.push({ id: doc.id, ...doc.data() } as RequestLink);
-      });
-      onLinksChange(linksData);
-    } catch (error) {
-      console.error('Error loading links:', error);
-    }
-  };
-
-  const handleAddLink = async () => {
+  const handleAddLink = () => {
     if (!newLink.name.trim() || !newLink.url.trim()) {
       alert('Please enter both name and URL');
       return;
     }
 
-    try {
-      if (requestId) {
-        await addDoc(collection(db, 'request_links'), {
-          request_id: requestId,
-          ...newLink,
-          created_at: new Date().toISOString(),
-        });
-        loadLinks();
-      } else {
-        const tempLink: RequestLink = {
-          id: `temp-${Date.now()}`,
-          request_id: '',
-          name: newLink.name,
-          url: newLink.url,
-          comments: newLink.comments,
-          created_at: new Date().toISOString(),
-        };
-        onLinksChange([...links, tempLink]);
-      }
+    const newLinkData: RequestLink = {
+      id: `link-${Date.now()}`,
+      name: newLink.name,
+      url: newLink.url,
+      comments: newLink.comments,
+      created_at: new Date().toISOString(),
+    };
 
-      setNewLink({ name: '', url: '', comments: '' });
-      setShowNewLinkForm(false);
-    } catch (error) {
-      console.error('Error adding link:', error);
-      alert('Failed to add link. Please try again.');
-    }
+    onLinksChange([...links, newLinkData]);
+    setNewLink({ name: '', url: '', comments: '' });
+    setShowNewLinkForm(false);
   };
 
-  const handleDeleteLink = async (linkId: string) => {
+  const handleDeleteLink = (linkId: string) => {
     if (!confirm('Are you sure you want to delete this link?')) return;
-
-    try {
-      if (requestId && !linkId.startsWith('temp-')) {
-        await deleteDoc(doc(db, 'request_links', linkId));
-        loadLinks();
-      } else {
-        onLinksChange(links.filter(link => link.id !== linkId));
-      }
-    } catch (error) {
-      console.error('Error deleting link:', error);
-      alert('Failed to delete link. Please try again.');
-    }
+    onLinksChange(links.filter(link => link.id !== linkId));
   };
 
   return (

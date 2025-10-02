@@ -39,6 +39,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
     } else {
       generateRequestNumber();
       setCreatedAt(new Date().toISOString());
+      setPendingLinks([]);
     }
   }, [requestId]);
 
@@ -77,6 +78,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         setDetails(data.details || '');
         setClientId(data.client_id || '');
         setCreatedAt(data.created_at);
+        setPendingLinks(data.links || []);
       }
     } catch (error) {
       console.error('Error loading request:', error);
@@ -114,6 +116,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         due_date: dueDate || '',
         details,
         client_id: clientId || '',
+        links: pendingLinks,
         created_by: user!.uid,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -166,6 +169,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         due_date: dueDate || '',
         details,
         client_id: clientId || '',
+        links: pendingLinks,
         created_by: user!.uid,
         updated_at: new Date().toISOString(),
       };
@@ -179,16 +183,6 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
           ...requestData,
           created_at: createdAt,
         });
-
-        for (const link of pendingLinks) {
-          await addDoc(collection(db, 'request_links'), {
-            request_id: docRef.id,
-            name: link.name,
-            url: link.url,
-            comments: link.comments,
-            created_at: link.created_at,
-          });
-        }
 
         setHasChanges(false);
         onSave(docRef.id);

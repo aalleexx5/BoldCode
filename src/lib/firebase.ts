@@ -35,6 +35,14 @@ export type Client = {
   updated_at: string;
 };
 
+export type RequestLink = {
+  id: string;
+  name: string;
+  url: string;
+  comments: string;
+  created_at: string;
+};
+
 export type Request = {
   id: string;
   request_number: string;
@@ -44,6 +52,7 @@ export type Request = {
   due_date: string;
   details: string;
   client_id: string | null;
+  links: RequestLink[];
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -67,15 +76,6 @@ export type ActivityLog = {
   new_value?: string;
   created_at: string;
   user?: Profile;
-};
-
-export type RequestLink = {
-  id: string;
-  request_id: string;
-  name: string;
-  url: string;
-  comments: string;
-  created_at: string;
 };
 
 export type RequestComment = {
