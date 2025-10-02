@@ -64,9 +64,9 @@ export const ClientList: React.FC<ClientListProps> = ({
   return (
     <div className="flex-1 flex flex-col bg-slate-50">
       <div className="bg-white border-b border-slate-200 p-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-start justify-between mb-6">
           <h2 className="text-2xl font-bold text-slate-800">Clients</h2>
-          <div className="flex items-center gap-3">
+          <div className="flex items-start gap-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
               <input
@@ -84,19 +84,21 @@ export const ClientList: React.FC<ClientListProps> = ({
             >
               <RefreshCw className="w-5 h-5" />
             </button>
-            <button
-              onClick={onNewClient}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
-            >
-              <Plus className="w-5 h-5" />
-              New Client
-            </button>
-            <button
-              onClick={onNavigateToRequests}
-              className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition font-medium"
-            >
-              Requests
-            </button>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={onNewClient}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+              >
+                <Plus className="w-5 h-5" />
+                New Client
+              </button>
+              <button
+                onClick={onNavigateToRequests}
+                className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition font-medium text-center"
+              >
+                Requests
+              </button>
+            </div>
           </div>
         </div>
       </div>
