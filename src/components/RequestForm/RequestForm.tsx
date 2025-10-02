@@ -123,18 +123,8 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
       return;
     }
 
-    if (hasChanges) {
-      alert('Please save your changes before cloning this request.');
-      return;
-    }
-
     try {
       setLoading(true);
-
-      await updateDoc(doc(db, 'requests', requestId), {
-        status: 'completed',
-        updated_at: new Date().toISOString(),
-      });
 
       const newRequestNumber = await getNextRequestNumber();
 
