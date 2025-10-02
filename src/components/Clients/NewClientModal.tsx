@@ -18,6 +18,8 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ onClose, onSave 
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [phoneError, setPhoneError] = useState('');
+  const [address, setAddress] = useState('');
+  const [website, setWebsite] = useState('');
   const [notes, setNotes] = useState('');
 
   const handlePhoneChange = (value: string) => {
@@ -50,6 +52,8 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ onClose, onSave 
         contact_name: contactName,
         email,
         phone,
+        address,
+        website,
         notes,
         created_by: user!.uid,
         created_at: new Date().toISOString(),
@@ -136,6 +140,32 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ onClose, onSave 
             {phoneError && (
               <p className="text-sm text-red-600 mt-1">{phoneError}</p>
             )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Address
+            </label>
+            <input
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="123 Main St, City, State 12345"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Website
+            </label>
+            <input
+              type="url"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="https://example.com"
+            />
           </div>
 
           <div>

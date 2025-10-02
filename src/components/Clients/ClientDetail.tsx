@@ -18,6 +18,8 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onClose, o
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [phoneError, setPhoneError] = useState('');
+  const [address, setAddress] = useState('');
+  const [website, setWebsite] = useState('');
   const [notes, setNotes] = useState('');
 
   const handlePhoneChange = (value: string) => {
@@ -46,6 +48,8 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onClose, o
         setContactName(data.contact_name || '');
         setEmail(data.email || '');
         setPhone(data.phone || '');
+        setAddress(data.address || '');
+        setWebsite(data.website || '');
         setNotes(data.notes || '');
       }
     } catch (error) {
@@ -73,6 +77,8 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onClose, o
         contact_name: contactName,
         email,
         phone,
+        address,
+        website,
         notes,
         updated_at: new Date().toISOString(),
       });
@@ -216,6 +222,40 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onClose, o
                 </>
               ) : (
                 <p className="text-slate-900">{phone || '-'}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Address
+              </label>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="123 Main St, City, State 12345"
+                />
+              ) : (
+                <p className="text-slate-900">{address || '-'}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Website
+              </label>
+              {isEditing ? (
+                <input
+                  type="url"
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="https://example.com"
+                />
+              ) : (
+                <p className="text-slate-900">{website || '-'}</p>
               )}
             </div>
 

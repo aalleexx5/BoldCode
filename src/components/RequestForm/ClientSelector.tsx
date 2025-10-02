@@ -20,6 +20,8 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({ selectedClientId
     contact_name: '',
     email: '',
     phone: '',
+    address: '',
+    website: '',
     notes: '',
   });
 
@@ -154,6 +156,18 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({ selectedClientId
                           <span className="ml-2 text-slate-600">{client.phone}</span>
                         </div>
                       )}
+                      {client.address && (
+                        <div>
+                          <span className="font-medium text-slate-700">Address:</span>
+                          <span className="ml-2 text-slate-600">{client.address}</span>
+                        </div>
+                      )}
+                      {client.website && (
+                        <div>
+                          <span className="font-medium text-slate-700">Website:</span>
+                          <span className="ml-2 text-slate-600">{client.website}</span>
+                        </div>
+                      )}
                       {client.notes && (
                         <div>
                           <span className="font-medium text-slate-700">Notes:</span>
@@ -173,7 +187,7 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({ selectedClientId
               <button
                 onClick={() => {
                   setShowNewClientForm(false);
-                  setNewClient({ company: '', contact_name: '', email: '', phone: '', notes: '' });
+                  setNewClient({ company: '', contact_name: '', email: '', phone: '', address: '', website: '', notes: '' });
                 }}
                 className="text-slate-400 hover:text-slate-600"
               >
@@ -238,6 +252,32 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({ selectedClientId
               {phoneError && (
                 <p className="text-xs text-red-600 mt-1">{phoneError}</p>
               )}
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">
+                Address
+              </label>
+              <input
+                type="text"
+                value={newClient.address}
+                onChange={(e) => setNewClient({ ...newClient, address: e.target.value })}
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="123 Main St, City, State 12345"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">
+                Website
+              </label>
+              <input
+                type="url"
+                value={newClient.website}
+                onChange={(e) => setNewClient({ ...newClient, website: e.target.value })}
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="https://example.com"
+              />
             </div>
 
             <div>

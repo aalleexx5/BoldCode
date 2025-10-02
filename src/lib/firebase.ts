@@ -29,6 +29,8 @@ export type Client = {
   contact_name: string;
   email: string;
   phone: string;
+  address: string;
+  website: string;
   notes: string;
   created_by: string;
   created_at: string;
