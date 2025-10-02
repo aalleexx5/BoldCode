@@ -1,68 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import { db, RequestComment } from '../../lib/firebase';
-import { collection, query, where, orderBy, getDocs, addDoc, doc, getDoc } from 'firebase/firestore';
+import React, { useState } from 'react';
+import { RequestComment } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { Send, MessageSquare } from 'lucide-react';
 
 interface CommentsSectionProps {
-  requestId: string;
+  comments: RequestComment[];
+  onCommentsChange: (comments: RequestComment[]) => void;
 }
 
-export const CommentsSection: React.FC<CommentsSectionProps> = ({ requestId }) => {
+export const CommentsSection: React.FC<CommentsSectionProps> = ({ comments, onCommentsChange }) => {
   const { user, profile } = useAuth();
-  const [comments, setComments] = useState<RequestComment[]>([]);
   const [newComment, setNewComment] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    loadComments();
-  }, [requestId]);
+  const handleAddComment = () => {
+    if (!newComment.trim() || !user || !profile) return;
 
-  const loadComments = async () => {
-    try {
-      const q = query(
-        collection(db, 'request_comments'),
-        where('request_id', '==', requestId),
-        orderBy('created_at', 'asc')
-      );
-      const querySnapshot = await getDocs(q);
-      const commentsData: RequestComment[] = [];
+    const comment: RequestComment = {
+      id: `temp-${Date.now()}`,
+      user_id: user.uid,
+      user_name: profile.full_name,
+      comment: newComment,
+      created_at: new Date().toISOString(),
+    };
 
-      for (const docSnap of querySnapshot.docs) {
-        const commentData = { id: docSnap.id, ...docSnap.data() } as RequestComment;
-        const userDoc = await getDoc(doc(db, 'profiles', commentData.user_id));
-        if (userDoc.exists()) {
-          commentData.user = { id: userDoc.id, ...userDoc.data() } as any;
-        }
-        commentsData.push(commentData);
-      }
-
-      setComments(commentsData);
-    } catch (error) {
-      console.error('Error loading comments:', error);
-    }
-  };
-
-  const handleAddComment = async () => {
-    if (!newComment.trim()) return;
-
-    setLoading(true);
-    try {
-      await addDoc(collection(db, 'request_comments'), {
-        request_id: requestId,
-        user_id: user!.uid,
-        comment: newComment,
-        created_at: new Date().toISOString(),
-      });
-
-      setNewComment('');
-      loadComments();
-    } catch (error) {
-      console.error('Error adding comment:', error);
-      alert('Failed to add comment. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    onCommentsChange([comment, ...comments]);
+    setNewComment('');
   };
 
   const formatTimestamp = (dateString: string) => {
@@ -75,7 +37,7 @@ export const CommentsSection: React.FC<CommentsSectionProps> = ({ requestId }) =
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
     if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
 
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   return (
@@ -85,36 +47,7 @@ export const CommentsSection: React.FC<CommentsSectionProps> = ({ requestId }) =
         <h3 className="text-lg font-semibold text-slate-800">Comments</h3>
       </div>
 
-      <div className="space-y-4 mb-4 max-h-96 overflow-y-auto">
-        {comments.map((comment) => (
-          <div key={comment.id} className="border-l-2 border-slate-200 pl-4">
-            <div className="flex items-start justify-between mb-1">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-sm font-medium text-blue-700">
-                    {comment.user?.full_name?.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-800">
-                    {comment.user?.full_name}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    {formatTimestamp(comment.created_at)}
-                  </p>
-                </div>
-              </div>
-            </div>
-            <p className="text-sm text-slate-700 mt-2 ml-10">{comment.comment}</p>
-          </div>
-        ))}
-
-        {comments.length === 0 && (
-          <p className="text-sm text-slate-500 text-center py-6">No comments yet</p>
-        )}
-      </div>
-
-      <div className="border-t border-slate-200 pt-4">
+      <div className="border-t border-slate-200 pt-4 mb-4">
         <div className="flex gap-2">
           <textarea
             value={newComment}
@@ -131,12 +64,41 @@ export const CommentsSection: React.FC<CommentsSectionProps> = ({ requestId }) =
           />
           <button
             onClick={handleAddComment}
-            disabled={loading || !newComment.trim()}
+            disabled={!newComment.trim()}
             className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed self-end"
           >
             <Send className="w-4 h-4" />
           </button>
         </div>
+      </div>
+
+      <div className="space-y-4 max-h-96 overflow-y-auto">
+        {comments.map((comment) => (
+          <div key={comment.id} className="border-l-2 border-slate-200 pl-4">
+            <div className="flex items-start justify-between mb-1">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-sm font-medium text-blue-700">
+                    {comment.user_name?.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-800">
+                    {comment.user_name}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {formatTimestamp(comment.created_at)}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <p className="text-sm text-slate-700 mt-2 ml-10">{comment.comment}</p>
+          </div>
+        ))}
+
+        {comments.length === 0 && (
+          <p className="text-sm text-slate-500 text-center py-6">No comments yet</p>
+        )}
       </div>
     </div>
   );

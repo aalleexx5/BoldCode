@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db, Request, RequestLink } from '../../lib/firebase';
+import { db, Request, RequestLink, RequestComment } from '../../lib/firebase';
 import { collection, query, orderBy, limit, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
 import { X, Save, Copy, Trash2 } from 'lucide-react';
@@ -33,6 +33,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
   const [clientId, setClientId] = useState<string>('');
   const [createdAt, setCreatedAt] = useState('');
   const [pendingLinks, setPendingLinks] = useState<RequestLink[]>([]);
+  const [comments, setComments] = useState<RequestComment[]>([]);
 
   useEffect(() => {
     if (requestId) {
@@ -41,6 +42,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
       generateRequestNumber();
       setCreatedAt(new Date().toISOString());
       setPendingLinks([]);
+      setComments([]);
     }
   }, [requestId]);
 
@@ -80,6 +82,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         setClientId(data.client_id || '');
         setCreatedAt(data.created_at);
         setPendingLinks(data.links || []);
+        setComments(data.comments || []);
       }
     } catch (error) {
       console.error('Error loading request:', error);
@@ -118,6 +121,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         details,
         client_id: clientId || '',
         links: pendingLinks,
+        comments: comments,
         created_by: user!.uid,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -171,6 +175,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         details,
         client_id: clientId || '',
         links: pendingLinks,
+        comments: comments,
         created_by: user!.uid,
         updated_at: new Date().toISOString(),
       };
@@ -396,7 +401,13 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
                   }}
                 />
 
-                {requestId && <CommentsSection requestId={requestId} />}
+                <CommentsSection
+                  comments={comments}
+                  onCommentsChange={(newComments) => {
+                    setComments(newComments);
+                    setHasChanges(true);
+                  }}
+                />
 
                 {requestId && <CostTrackerSection requestId={requestId} />}
               </div>

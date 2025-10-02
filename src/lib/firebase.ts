@@ -43,6 +43,14 @@ export type RequestLink = {
   created_at: string;
 };
 
+export type RequestComment = {
+  id: string;
+  user_id: string;
+  user_name: string;
+  comment: string;
+  created_at: string;
+};
+
 export type Request = {
   id: string;
   request_number: string;
@@ -53,6 +61,7 @@ export type Request = {
   details: string;
   client_id: string | null;
   links: RequestLink[];
+  comments: RequestComment[];
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -74,15 +83,6 @@ export type ActivityLog = {
   action_type: 'created' | 'status_change' | 'due_date_change' | 'details_change';
   old_value?: string;
   new_value?: string;
-  created_at: string;
-  user?: Profile;
-};
-
-export type RequestComment = {
-  id: string;
-  request_id: string;
-  user_id: string;
-  comment: string;
   created_at: string;
   user?: Profile;
 };
