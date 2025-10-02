@@ -3,6 +3,7 @@ import { db, Client } from '../../lib/firebase';
 import { collection, query, orderBy, getDocs, addDoc } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
 import { Plus, X } from 'lucide-react';
+import { formatPhoneNumber, validatePhoneNumber } from '../../utils/phoneFormatter';
 
 interface ClientSelectorProps {
   selectedClientId: string;
@@ -13,6 +14,7 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({ selectedClientId
   const { user } = useAuth();
   const [clients, setClients] = useState<Client[]>([]);
   const [showNewClientForm, setShowNewClientForm] = useState(false);
+  const [phoneError, setPhoneError] = useState('');
   const [newClient, setNewClient] = useState({
     company: '',
     contact_name: '',
@@ -20,6 +22,18 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({ selectedClientId
     phone: '',
     notes: '',
   });
+
+  const handlePhoneChange = (value: string) => {
+    const formatted = formatPhoneNumber(value);
+    setNewClient({ ...newClient, phone: formatted });
+
+    if (formatted) {
+      const validation = validatePhoneNumber(formatted);
+      setPhoneError(validation.error || '');
+    } else {
+      setPhoneError('');
+    }
+  };
 
   useEffect(() => {
     loadClients();
@@ -42,6 +56,11 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({ selectedClientId
   const handleAddClient = async () => {
     if (!newClient.company.trim()) {
       alert('Please enter a company name');
+      return;
+    }
+
+    if (newClient.phone && phoneError) {
+      alert(phoneError);
       return;
     }
 
@@ -208,10 +227,17 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({ selectedClientId
               <input
                 type="tel"
                 value={newClient.phone}
-                onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="(555) 123-4567"
+                onChange={(e) => handlePhoneChange(e.target.value)}
+                className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:border-transparent ${
+                  phoneError
+                    ? 'border-red-300 focus:ring-red-500'
+                    : 'border-slate-300 focus:ring-blue-500'
+                }`}
+                placeholder="714-270-8047"
               />
+              {phoneError && (
+                <p className="text-xs text-red-600 mt-1">{phoneError}</p>
+              )}
             </div>
 
             <div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { db, Client } from '../../lib/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { X, Save } from 'lucide-react';
+import { formatPhoneNumber, validatePhoneNumber } from '../../utils/phoneFormatter';
 
 interface ClientDetailProps {
   clientId: string;
@@ -16,7 +17,20 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onClose, o
   const [contactName, setContactName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [phoneError, setPhoneError] = useState('');
   const [notes, setNotes] = useState('');
+
+  const handlePhoneChange = (value: string) => {
+    const formatted = formatPhoneNumber(value);
+    setPhone(formatted);
+
+    if (formatted) {
+      const validation = validatePhoneNumber(formatted);
+      setPhoneError(validation.error || '');
+    } else {
+      setPhoneError('');
+    }
+  };
 
   useEffect(() => {
     loadClient();
@@ -44,6 +58,11 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onClose, o
   const handleSave = async () => {
     if (!company.trim()) {
       alert('Company name is required');
+      return;
+    }
+
+    if (phone && phoneError) {
+      alert(phoneError);
       return;
     }
 
@@ -179,13 +198,22 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onClose, o
                 Phone
               </label>
               {isEditing ? (
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="(555) 123-4567"
-                />
+                <>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => handlePhoneChange(e.target.value)}
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:border-transparent ${
+                      phoneError
+                        ? 'border-red-300 focus:ring-red-500'
+                        : 'border-slate-300 focus:ring-blue-500'
+                    }`}
+                    placeholder="714-270-8047"
+                  />
+                  {phoneError && (
+                    <p className="text-sm text-red-600 mt-1">{phoneError}</p>
+                  )}
+                </>
               ) : (
                 <p className="text-slate-900">{phone || '-'}</p>
               )}
