@@ -139,16 +139,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onSelectRequest, onB
     <div className="flex-1 flex flex-col bg-slate-50 overflow-hidden">
       <div className="bg-white border-b border-slate-200 px-6 py-4">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={onBack}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition font-medium"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              Back to List
-            </button>
-            <h2 className="text-2xl font-bold text-slate-800">Calendar by Due Dates</h2>
-          </div>
+          <h2 className="text-2xl font-bold text-slate-800">Calendar by Due Dates</h2>
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition font-medium"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            Back to List
+          </button>
         </div>
 
         <div className="flex items-center justify-between">
