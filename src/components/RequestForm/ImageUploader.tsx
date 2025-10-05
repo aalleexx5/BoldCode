@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Upload, X } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import { Upload } from 'lucide-react';
 
 interface ImageUploaderProps {
   onImagesUploaded: (urls: string[]) => void;
@@ -7,69 +7,50 @@ interface ImageUploaderProps {
 }
 
 export default function ImageUploader({ onImagesUploaded, existingImages = [] }: ImageUploaderProps) {
-  const [uploading, setUploading] = useState(false);
+  const cloudinaryRef = useRef<any>();
+  const widgetRef = useRef<any>();
 
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
-
-    setUploading(true);
-
-    try {
-      const uploadPromises = Array.from(files).map(async (file) => {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
-        formData.append('folder', 'request-images');
-
-        const response = await fetch(
-          `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
-          {
-            method: 'POST',
-            body: formData,
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any).cloudinary) {
+      cloudinaryRef.current = (window as any).cloudinary;
+      widgetRef.current = cloudinaryRef.current.createUploadWidget(
+        {
+          cloudName: import.meta.env.VITE_CLOUDINARY_CLOUD_NAME,
+          uploadPreset: import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET,
+          sources: ['local', 'url', 'camera'],
+          multiple: true,
+          maxFiles: 10,
+          clientAllowedFormats: ['png', 'jpg', 'jpeg', 'gif', 'webp'],
+          maxFileSize: 10000000,
+          folder: 'request-images',
+        },
+        (error: any, result: any) => {
+          if (!error && result && result.event === 'success') {
+            const newImageUrl = result.info.secure_url;
+            const updatedImages = [...existingImages, newImageUrl];
+            onImagesUploaded(updatedImages);
           }
-        );
-
-        if (!response.ok) {
-          throw new Error(`Upload failed: ${response.statusText}`);
         }
-
-        const data = await response.json();
-        return data.secure_url;
-      });
-
-      const uploadedUrls = await Promise.all(uploadPromises);
-      const updatedImages = [...existingImages, ...uploadedUrls];
-      onImagesUploaded(updatedImages);
-
-      event.target.value = '';
-    } catch (error) {
-      console.error('Upload error:', error);
-      alert('Failed to upload images. Please check your Cloudinary configuration and try again.');
-    } finally {
-      setUploading(false);
+      );
     }
-  };
+  }, [existingImages, onImagesUploaded]);
 
-  const removeImage = (index: number) => {
-    const updatedImages = existingImages.filter((_, i) => i !== index);
-    onImagesUploaded(updatedImages);
+  const handleOpenWidget = () => {
+    if (widgetRef.current) {
+      widgetRef.current.open();
+    }
   };
 
   return (
     <div className="mb-4">
-      <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer inline-flex disabled:bg-gray-400">
+      <button
+        type="button"
+        onClick={handleOpenWidget}
+        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+      >
         <Upload size={18} />
-        {uploading ? 'Uploading...' : 'Upload Images'}
-        <input
-          type="file"
-          multiple
-          accept="image/png,image/jpg,image/jpeg,image/gif,image/webp"
-          onChange={handleFileSelect}
-          disabled={uploading}
-          className="hidden"
-        />
-      </label>
+        Upload Images
+      </button>
 
       {existingImages.length > 0 && (
         <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
@@ -82,10 +63,15 @@ export default function ImageUploader({ onImagesUploaded, existingImages = [] }:
               />
               <button
                 type="button"
-                onClick={() => removeImage(index)}
-                className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700"
+                onClick={() => {
+                  const updatedImages = existingImages.filter((_, i) => i !== index);
+                  onImagesUploaded(updatedImages);
+                }}
+                className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
               >
-                <X size={14} />
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
           ))}
