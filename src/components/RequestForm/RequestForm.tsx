@@ -8,6 +8,7 @@ import { LinksSection } from './LinksSection';
 import { CommentsSection } from './CommentsSection';
 import { CostTrackerSection } from './CostTrackerSection';
 import { RichTextEditor } from './RichTextEditor';
+import { AssignedToSelector } from './AssignedToSelector';
 
 interface RequestFormProps {
   requestId?: string;
@@ -55,6 +56,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
   const [requestType, setRequestType] = useState<string>(REQUEST_TYPES[0]);
   const [status, setStatus] = useState<string>('submitted');
   const [dueDate, setDueDate] = useState('');
+  const [assignedTo, setAssignedTo] = useState<string>('');
   const [details, setDetails] = useState('');
   const [clientId, setClientId] = useState<string>('');
   const [createdAt, setCreatedAt] = useState('');
@@ -104,6 +106,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         setRequestType(data.request_type);
         setStatus(data.status);
         setDueDate(data.due_date || '');
+        setAssignedTo(data.assigned_to || '');
         setDetails(data.details || '');
         setClientId(data.client_id || '');
         setCreatedAt(data.created_at);
@@ -134,6 +137,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         request_type: requestType,
         status: 'submitted',
         due_date: dueDate || '',
+        assigned_to: assignedTo || '',
         details,
         client_id: clientId || '',
         links: pendingLinks,
@@ -188,6 +192,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         request_type: requestType,
         status,
         due_date: dueDate || '',
+        assigned_to: assignedTo || '',
         details,
         client_id: clientId || '',
         links: pendingLinks,
@@ -383,6 +388,16 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
                         className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
+                  </div>
+
+                  <div>
+                    <AssignedToSelector
+                      selectedValue={assignedTo}
+                      onChange={(value) => {
+                        setAssignedTo(value);
+                        setHasChanges(true);
+                      }}
+                    />
                   </div>
                 </div>
 

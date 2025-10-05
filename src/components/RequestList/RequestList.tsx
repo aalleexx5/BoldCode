@@ -5,7 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Search, RefreshCw, Plus, Pin, ArrowUpDown, CheckSquare, Square } from 'lucide-react';
 import { RequestItem } from './RequestItem';
 
-type SortField = 'request_number' | 'title' | 'due_date' | 'status' | 'request_type' | 'creator_name';
+type SortField = 'request_number' | 'title' | 'due_date' | 'status' | 'request_type' | 'creator_name' | 'assigned_to_name';
 type SortDirection = 'asc' | 'desc';
 
 interface RequestListProps {
@@ -94,6 +94,16 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
         if (userDoc.exists()) {
           (requestData as any).creator_name = userDoc.data().full_name;
         }
+
+        if (requestData.assigned_to && requestData.assigned_to !== 'Everyone') {
+          const assignedDoc = await getDoc(doc(db, 'profiles', requestData.assigned_to));
+          if (assignedDoc.exists()) {
+            (requestData as any).assigned_to_name = assignedDoc.data().full_name;
+          }
+        } else if (requestData.assigned_to === 'Everyone') {
+          (requestData as any).assigned_to_name = 'Everyone';
+        }
+
         requestsData.push(requestData);
       }
 
@@ -128,6 +138,11 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
       if (sortField === 'creator_name') {
         aValue = (a as any).creator_name || '';
         bValue = (b as any).creator_name || '';
+      }
+
+      if (sortField === 'assigned_to_name') {
+        aValue = (a as any).assigned_to_name || '';
+        bValue = (b as any).assigned_to_name || '';
       }
 
       if (!aValue) aValue = '';
@@ -316,7 +331,7 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
                 </div>
               </div>
             )}
-            <div className="grid grid-cols-[50px_120px_1fr_120px_140px_140px_160px] gap-4 px-6 py-4 bg-slate-50 border-b border-slate-200 font-medium text-sm text-slate-700">
+            <div className="grid grid-cols-[50px_120px_1fr_120px_140px_140px_160px_160px] gap-4 px-6 py-4 bg-slate-50 border-b border-slate-200 font-medium text-sm text-slate-700">
               <button
                 onClick={toggleSelectAll}
                 className="flex items-center justify-center hover:text-blue-600 transition"
@@ -363,6 +378,12 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
                 className="flex items-center gap-1 hover:text-blue-600 transition text-left"
               >
                 Created By <ArrowUpDown className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => handleSort('assigned_to_name')}
+                className="flex items-center gap-1 hover:text-blue-600 transition text-left"
+              >
+                Assigned To <ArrowUpDown className="w-4 h-4" />
               </button>
             </div>
             <div className="divide-y divide-slate-200">

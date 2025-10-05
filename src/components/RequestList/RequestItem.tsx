@@ -33,7 +33,7 @@ export const RequestItem: React.FC<RequestItemProps> = ({ request, onClick, isSe
 
   return (
     <div
-      className={`grid grid-cols-[50px_120px_1fr_120px_140px_140px_160px] gap-4 px-6 py-4 hover:bg-slate-50 transition ${
+      className={`grid grid-cols-[50px_120px_1fr_120px_140px_140px_160px_160px] gap-4 px-6 py-4 hover:bg-slate-50 transition ${
         isSelected ? 'bg-blue-50' : ''
       }`}
     >
@@ -53,6 +53,7 @@ export const RequestItem: React.FC<RequestItemProps> = ({ request, onClick, isSe
       </div>
       <div onClick={onClick} className="text-sm text-slate-600 cursor-pointer">{request.request_type}</div>
       <div onClick={onClick} className="text-sm text-slate-600 cursor-pointer">{(request as any).creator_name || '-'}</div>
+      <div onClick={onClick} className="text-sm text-slate-600 cursor-pointer">{(request as any).assigned_to_name || '-'}</div>
     </div>
   );
 };

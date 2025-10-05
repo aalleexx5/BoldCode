@@ -60,6 +60,7 @@ export type Request = {
   request_type: 'Animation' | 'Video Editing' | '3D Design' | 'Web Design' | 'Design for Print' | 'Presentation' | 'Market Research' | 'Photography' | 'Videography' | 'Social Media' | 'Digital Marketing' | 'Media Management' | 'Company Events' | 'Brand Design' | 'Brand Management' | 'Pre-Production' | 'Budgeting & Strategy' | 'Team & Logistics' | 'Client Interaction' | 'Directing' | 'Sound Design' | 'Sound Engineering' | 'Project Management' | 'Accounting' | 'Other';
   status: 'submitted' | 'draft' | 'in progress' | 'awaiting feedback' | 'pending approval' | 'completed' | 'canceled';
   due_date: string;
+  assigned_to: string;
   details: string;
   client_id: string | null;
   links: RequestLink[];
