@@ -197,7 +197,6 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         client_id: clientId || '',
         links: pendingLinks,
         comments: comments,
-        created_by: user!.uid,
         updated_at: new Date().toISOString(),
       };
 
@@ -208,6 +207,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
       } else {
         const docRef = await addDoc(collection(db, 'requests'), {
           ...requestData,
+          created_by: user!.uid,
           created_at: createdAt,
         });
 
