@@ -322,6 +322,17 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onSelectRequest, onB
             </div>
           </div>
         )}
+
+        <div className="mt-6 flex items-center justify-center gap-4 pb-6">
+          {STATUS_OPTIONS.map((status) => (
+            <div
+              key={status.value}
+              className={`px-3 py-1.5 rounded border text-sm font-medium ${getStatusColor(status.value)}`}
+            >
+              {status.label}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
