@@ -1,67 +1,92 @@
-import React, { useRef, useState } from 'react';
-import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import React, { useEffect, useState } from 'react';
+import { Upload, X, Image as ImageIcon } from 'lucide-react';
 
 interface ImageUploadProps {
   images: string[];
   onChange: (images: string[]) => void;
 }
 
+declare global {
+  interface Window {
+    cloudinary: {
+      createUploadWidget: (
+        options: {
+          cloudName: string;
+          uploadPreset: string;
+          sources: string[];
+          multiple: boolean;
+          maxFiles: number;
+          folder: string;
+        },
+        callback: (error: any, result: any) => void
+      ) => {
+        open: () => void;
+        close: () => void;
+      };
+    };
+  }
+}
+
 export const ImageUpload: React.FC<ImageUploadProps> = ({ images, onChange }) => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
+  const [isScriptLoaded, setIsScriptLoaded] = useState(false);
+
+  useEffect(() => {
+    if (window.cloudinary) {
+      setIsScriptLoaded(true);
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://widget.cloudinary.com/v2.0/global/all.js';
+    script.async = true;
+    script.onload = () => setIsScriptLoaded(true);
+    document.body.appendChild(script);
+
+    return () => {
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
+  }, []);
 
   const handleUpload = () => {
-    fileInputRef.current?.click();
-  };
+    if (!isScriptLoaded || !window.cloudinary) {
+      alert('Cloudinary widget is loading. Please try again in a moment.');
+      return;
+    }
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
+    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
-    setUploading(true);
+    if (!cloudName || !uploadPreset) {
+      alert('Cloudinary configuration is missing. Please check your environment variables.');
+      return;
+    }
 
-    try {
-      const uploadedUrls: string[] = [];
-
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
-        const filePath = `request-images/${fileName}`;
-
-        const { data, error } = await supabase.storage
-          .from('images')
-          .upload(filePath, file, {
-            cacheControl: '3600',
-            upsert: false
-          });
-
+    const widget = window.cloudinary.createUploadWidget(
+      {
+        cloudName,
+        uploadPreset,
+        sources: ['local', 'url', 'camera'],
+        multiple: true,
+        maxFiles: 10,
+        folder: 'BoldCode',
+      },
+      (error, result) => {
         if (error) {
           console.error('Upload error:', error);
-          alert(`Failed to upload ${file.name}. Please try again.`);
-          continue;
+          alert('Failed to upload image. Please try again.');
+          return;
         }
 
-        const { data: { publicUrl } } = supabase.storage
-          .from('images')
-          .getPublicUrl(filePath);
+        if (result.event === 'success') {
+          const newImages = [...images, result.info.secure_url];
+          onChange(newImages);
+        }
+      }
+    );
 
-        uploadedUrls.push(publicUrl);
-      }
-
-      if (uploadedUrls.length > 0) {
-        onChange([...images, ...uploadedUrls]);
-      }
-    } catch (error) {
-      console.error('Upload error:', error);
-      alert('Failed to upload images. Please try again.');
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
+    widget.open();
   };
 
   const handleRemoveImage = (index: number) => {
@@ -71,34 +96,16 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({ images, onChange }) =>
 
   return (
     <div className="space-y-4">
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        multiple
-        onChange={handleFileChange}
-        className="hidden"
-      />
-
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-medium text-slate-700">Images</h4>
         <button
           type="button"
           onClick={handleUpload}
-          disabled={uploading}
+          disabled={!isScriptLoaded}
           className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {uploading ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Uploading...
-            </>
-          ) : (
-            <>
-              <Upload className="w-4 h-4" />
-              Upload Images
-            </>
-          )}
+          <Upload className="w-4 h-4" />
+          Upload Images
         </button>
       </div>
 
