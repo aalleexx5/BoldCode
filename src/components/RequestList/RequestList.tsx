@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { db, Request } from '../../lib/firebase';
 import { collection, query, orderBy, getDocs, doc, getDoc, setDoc, writeBatch } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
-import { Search, RefreshCw, Plus, Pin, ArrowUpDown, CheckSquare, Square } from 'lucide-react';
+import { Search, RefreshCw, Plus, Pin, ArrowUpDown, CheckSquare, Square, Calendar } from 'lucide-react';
 import { RequestItem } from './RequestItem';
 
 type SortField = 'request_number' | 'title' | 'due_date' | 'status' | 'request_type' | 'creator_name' | 'assigned_to_name';
@@ -12,6 +12,7 @@ interface RequestListProps {
   onSelectRequest: (requestId: string) => void;
   onNewRequest: () => void;
   onNavigateToClients: () => void;
+  onNavigateToCalendar: (filters: string[]) => void;
   refreshTrigger: number;
 }
 
@@ -25,7 +26,7 @@ const STATUS_OPTIONS = [
   { value: 'canceled', label: 'Canceled' },
 ];
 
-export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNewRequest, onNavigateToClients, refreshTrigger }) => {
+export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNewRequest, onNavigateToClients, onNavigateToCalendar, refreshTrigger }) => {
   const { user } = useAuth();
   const [requests, setRequests] = useState<Request[]>([]);
   const [filteredRequests, setFilteredRequests] = useState<Request[]>([]);
@@ -249,6 +250,13 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
               className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition font-medium"
             >
               Clients
+            </button>
+            <button
+              onClick={() => onNavigateToCalendar(selectedFilters)}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition font-medium"
+            >
+              <Calendar className="w-5 h-5" />
+              Calendar
             </button>
           </div>
         </div>

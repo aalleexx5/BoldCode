@@ -9,12 +9,14 @@ import { Profile } from './components/Profile/Profile';
 import { ClientList } from './components/Clients/ClientList';
 import { ClientDetail } from './components/Clients/ClientDetail';
 import { NewClientModal } from './components/Clients/NewClientModal';
+import { CalendarView } from './components/Calendar/CalendarView';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  const [currentPage, setCurrentPage] = useState<'requests' | 'clients'>('requests');
+  const [currentPage, setCurrentPage] = useState<'requests' | 'clients' | 'calendar'>('requests');
   const [selectedRequestId, setSelectedRequestId] = useState<string | undefined>();
+  const [calendarFilters, setCalendarFilters] = useState<string[]>([]);
   const [showNewRequest, setShowNewRequest] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string | undefined>();
@@ -83,7 +85,32 @@ const AppContent: React.FC = () => {
             onSelectRequest={setSelectedRequestId}
             onNewRequest={() => setShowNewRequest(true)}
             onNavigateToClients={() => setCurrentPage('clients')}
+            onNavigateToCalendar={(filters) => {
+              setCalendarFilters(filters);
+              setCurrentPage('calendar');
+            }}
             refreshTrigger={refreshTrigger}
+          />
+        )
+      ) : currentPage === 'calendar' ? (
+        selectedRequestId ? (
+          <RequestForm
+            requestId={selectedRequestId}
+            onClose={() => {
+              setSelectedRequestId(undefined);
+              setCurrentPage('calendar');
+            }}
+            onSave={() => {
+              setSelectedRequestId(undefined);
+              setCurrentPage('calendar');
+              setRefreshTrigger((prev) => prev + 1);
+            }}
+          />
+        ) : (
+          <CalendarView
+            onSelectRequest={setSelectedRequestId}
+            onBack={() => setCurrentPage('requests')}
+            selectedFilters={calendarFilters}
           />
         )
       ) : selectedClientId ? (
