@@ -141,7 +141,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         details,
         client_id: clientId || '',
         links: pendingLinks,
-        comments: comments,
+        comments: [],
         created_by: user!.uid,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
