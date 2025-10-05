@@ -147,7 +147,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onSelectRequest, onB
               <ArrowLeft className="w-5 h-5" />
               Back to List
             </button>
-            <h2 className="text-2xl font-bold text-slate-800">Calendar View</h2>
+            <h2 className="text-2xl font-bold text-slate-800">Calendar by Due Dates</h2>
           </div>
         </div>
 
