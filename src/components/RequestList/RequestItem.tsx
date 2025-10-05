@@ -1,6 +1,6 @@
 import React from 'react';
 import { Request } from '../../lib/firebase';
-import { CheckSquare, Square, Image } from 'lucide-react';
+import { CheckSquare, Square } from 'lucide-react';
 
 interface RequestItemProps {
   request: Request;
@@ -44,15 +44,7 @@ export const RequestItem: React.FC<RequestItemProps> = ({ request, onClick, isSe
         {isSelected ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5" />}
       </button>
       <div onClick={onClick} className="text-sm font-medium text-slate-900 cursor-pointer">{request.request_number}</div>
-      <div onClick={onClick} className="text-sm text-slate-900 truncate cursor-pointer flex items-center gap-2">
-        {request.title}
-        {request.uploaded_images && request.uploaded_images.length > 0 && (
-          <span className="flex items-center gap-1 text-xs text-slate-500" title={`${request.uploaded_images.length} image(s) attached`}>
-            <Image className="w-3.5 h-3.5" />
-            {request.uploaded_images.length}
-          </span>
-        )}
-      </div>
+      <div onClick={onClick} className="text-sm text-slate-900 truncate cursor-pointer">{request.title}</div>
       <div onClick={onClick} className="text-sm text-slate-600 cursor-pointer">{formatDate(request.due_date)}</div>
       <div onClick={onClick} className="cursor-pointer">
         <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[request.status]}`}>
