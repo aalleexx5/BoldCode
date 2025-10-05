@@ -182,7 +182,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
 
     setLoading(true);
     try {
-      const requestData = {
+      const baseRequestData = {
         request_number: requestNumber,
         title,
         request_type: requestType,
@@ -192,17 +192,17 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         client_id: clientId || '',
         links: pendingLinks,
         comments: comments,
-        created_by: user!.uid,
         updated_at: new Date().toISOString(),
       };
 
       if (requestId) {
-        await updateDoc(doc(db, 'requests', requestId), requestData);
+        await updateDoc(doc(db, 'requests', requestId), baseRequestData);
         setHasChanges(false);
         onSave();
       } else {
         const docRef = await addDoc(collection(db, 'requests'), {
-          ...requestData,
+          ...baseRequestData,
+          created_by: user!.uid,
           created_at: createdAt,
         });
 
