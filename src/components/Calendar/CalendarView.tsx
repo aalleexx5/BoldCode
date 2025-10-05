@@ -1,27 +1,72 @@
 import React, { useState, useEffect } from 'react';
 import { db, Request } from '../../lib/firebase';
-import { collection, query, orderBy, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, doc, getDoc, setDoc } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
-import { ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowLeft, Pin } from 'lucide-react';
 
 interface CalendarViewProps {
   onSelectRequest: (requestId: string) => void;
   onBack: () => void;
   selectedFilters: string[];
+  onFiltersChange: (filters: string[]) => void;
 }
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-export const CalendarView: React.FC<CalendarViewProps> = ({ onSelectRequest, onBack, selectedFilters }) => {
+const STATUS_OPTIONS = [
+  { value: 'submitted', label: 'Submitted' },
+  { value: 'draft', label: 'Draft' },
+  { value: 'in progress', label: 'In Progress' },
+  { value: 'awaiting feedback', label: 'Awaiting Feedback' },
+  { value: 'pending approval', label: 'Pending Approval' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'canceled', label: 'Canceled' },
+];
+
+export const CalendarView: React.FC<CalendarViewProps> = ({ onSelectRequest, onBack, selectedFilters, onFiltersChange }) => {
   const { user } = useAuth();
   const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [isPinned, setIsPinned] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      loadPinnedFilters();
+    }
+  }, [user]);
 
   useEffect(() => {
     loadRequests();
   }, []);
+
+  const loadPinnedFilters = async () => {
+    try {
+      const prefDoc = await getDoc(doc(db, 'user_filter_preferences', user!.uid));
+      if (prefDoc.exists()) {
+        const data = prefDoc.data();
+        if (data.pinned_filters) {
+          setIsPinned(true);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading pinned filters:', error);
+    }
+  };
+
+  const savePinnedFilters = async () => {
+    try {
+      await setDoc(doc(db, 'user_filter_preferences', user!.uid), {
+        user_id: user!.uid,
+        pinned_filters: selectedFilters,
+        updated_at: new Date().toISOString(),
+      });
+      setIsPinned(true);
+    } catch (error) {
+      console.error('Error saving pinned filters:', error);
+    }
+  };
 
   const loadRequests = async () => {
     setLoading(true);
@@ -41,6 +86,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onSelectRequest, onB
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleFilter = (status: string) => {
+    const newFilters = selectedFilters.includes(status)
+      ? selectedFilters.filter((s) => s !== status)
+      : [...selectedFilters, status];
+    onFiltersChange(newFilters);
+    setIsPinned(false);
   };
 
   const getFilteredRequests = () => {
@@ -146,6 +199,37 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onSelectRequest, onB
           >
             <ArrowLeft className="w-5 h-5" />
             Back to List
+          </button>
+        </div>
+
+        <div className="flex items-center gap-4 mb-4">
+          <div className="flex flex-wrap gap-3">
+            {STATUS_OPTIONS.map((status) => (
+              <label
+                key={status.value}
+                className="flex items-center gap-2 cursor-pointer select-none"
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedFilters.includes(status.value)}
+                  onChange={() => toggleFilter(status.value)}
+                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                />
+                <span className="text-sm text-slate-700">{status.label}</span>
+              </label>
+            ))}
+          </div>
+          <button
+            onClick={savePinnedFilters}
+            disabled={isPinned}
+            className={`p-2 rounded-lg transition ${
+              isPinned
+                ? 'bg-green-100 text-green-700 cursor-default'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
+            title="Pin current filter selection"
+          >
+            <Pin className="w-4 h-4" />
           </button>
         </div>
 

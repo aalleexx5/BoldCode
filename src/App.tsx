@@ -111,6 +111,7 @@ const AppContent: React.FC = () => {
             onSelectRequest={setSelectedRequestId}
             onBack={() => setCurrentPage('requests')}
             selectedFilters={calendarFilters}
+            onFiltersChange={setCalendarFilters}
           />
         )
       ) : selectedClientId ? (
