@@ -9,6 +9,7 @@ import { CommentsSection } from './CommentsSection';
 import { CostTrackerSection } from './CostTrackerSection';
 import { RichTextEditor } from './RichTextEditor';
 import { AssignedToSelector } from './AssignedToSelector';
+import ImageUploader from './ImageUploader';
 
 interface RequestFormProps {
   requestId?: string;
@@ -62,6 +63,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
   const [createdAt, setCreatedAt] = useState('');
   const [pendingLinks, setPendingLinks] = useState<RequestLink[]>([]);
   const [comments, setComments] = useState<RequestComment[]>([]);
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
 
   useEffect(() => {
     if (requestId) {
@@ -71,6 +73,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
       setCreatedAt(new Date().toISOString());
       setPendingLinks([]);
       setComments([]);
+      setUploadedImages([]);
     }
   }, [requestId]);
 
@@ -112,6 +115,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         setCreatedAt(data.created_at);
         setPendingLinks(data.links || []);
         setComments(data.comments || []);
+        setUploadedImages(data.uploaded_images || []);
       }
     } catch (error) {
       console.error('Error loading request:', error);
@@ -142,6 +146,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         client_id: clientId || '',
         links: pendingLinks,
         comments: [],
+        uploaded_images: uploadedImages,
         created_by: user!.uid,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -197,6 +202,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         client_id: clientId || '',
         links: pendingLinks,
         comments: comments,
+        uploaded_images: uploadedImages,
         created_by: user!.uid,
         updated_at: new Date().toISOString(),
       };
@@ -413,6 +419,17 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
                     }}
                     placeholder="Enter detailed description of the request..."
                   />
+
+                  <div className="mt-6">
+                    <h4 className="text-md font-medium text-slate-700 mb-3">Attachments</h4>
+                    <ImageUploader
+                      existingImages={uploadedImages}
+                      onImagesUploaded={(urls) => {
+                        setUploadedImages(urls);
+                        setHasChanges(true);
+                      }}
+                    />
+                  </div>
                 </div>
 
                 <LinksSection

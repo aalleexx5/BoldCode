@@ -65,6 +65,7 @@ export type Request = {
   client_id: string | null;
   links: RequestLink[];
   comments: RequestComment[];
+  uploaded_images?: string[];
   created_by: string;
   created_at: string;
   updated_at: string;
