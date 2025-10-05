@@ -221,6 +221,13 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-slate-800">Requests</h2>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => onNavigateToCalendar(selectedFilters)}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition font-medium"
+            >
+              <Calendar className="w-5 h-5" />
+              Calendar
+            </button>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
               <input
@@ -250,13 +257,6 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
               className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition font-medium"
             >
               Clients
-            </button>
-            <button
-              onClick={() => onNavigateToCalendar(selectedFilters)}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition font-medium"
-            >
-              <Calendar className="w-5 h-5" />
-              Calendar
             </button>
           </div>
         </div>
