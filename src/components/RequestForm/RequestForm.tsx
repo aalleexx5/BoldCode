@@ -9,6 +9,7 @@ import { CommentsSection } from './CommentsSection';
 import { CostTrackerSection } from './CostTrackerSection';
 import { RichTextEditor } from './RichTextEditor';
 import { AssignedToSelector } from './AssignedToSelector';
+import { ImageUpload } from './ImageUpload';
 
 interface RequestFormProps {
   requestId?: string;
@@ -58,6 +59,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
   const [dueDate, setDueDate] = useState('');
   const [assignedTo, setAssignedTo] = useState<string>('');
   const [details, setDetails] = useState('');
+  const [images, setImages] = useState<string[]>([]);
   const [clientId, setClientId] = useState<string>('');
   const [createdAt, setCreatedAt] = useState('');
   const [pendingLinks, setPendingLinks] = useState<RequestLink[]>([]);
@@ -71,6 +73,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
       setCreatedAt(new Date().toISOString());
       setPendingLinks([]);
       setComments([]);
+      setImages([]);
     }
   }, [requestId]);
 
@@ -108,6 +111,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         setDueDate(data.due_date || '');
         setAssignedTo(data.assigned_to || '');
         setDetails(data.details || '');
+        setImages(data.images || []);
         setClientId(data.client_id || '');
         setCreatedAt(data.created_at);
         setPendingLinks(data.links || []);
@@ -139,6 +143,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         due_date: dueDate || '',
         assigned_to: assignedTo || '',
         details,
+        images,
         client_id: clientId || '',
         links: pendingLinks,
         comments: [],
@@ -194,6 +199,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         due_date: dueDate || '',
         assigned_to: assignedTo || '',
         details,
+        images,
         client_id: clientId || '',
         links: pendingLinks,
         comments: comments,
@@ -412,6 +418,16 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
                       setHasChanges(true);
                     }}
                     placeholder="Enter detailed description of the request..."
+                  />
+                </div>
+
+                <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+                  <ImageUpload
+                    images={images}
+                    onChange={(newImages) => {
+                      setImages(newImages);
+                      setHasChanges(true);
+                    }}
                   />
                 </div>
 

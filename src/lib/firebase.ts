@@ -62,6 +62,7 @@ export type Request = {
   due_date: string;
   assigned_to: string;
   details: string;
+  images: string[];
   client_id: string | null;
   links: RequestLink[];
   comments: RequestComment[];
