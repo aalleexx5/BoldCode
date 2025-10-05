@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Upload } from 'lucide-react';
 
 interface ImageUploaderProps {
@@ -7,38 +7,51 @@ interface ImageUploaderProps {
 }
 
 export default function ImageUploader({ onImagesUploaded, existingImages = [] }: ImageUploaderProps) {
-  const cloudinaryRef = useRef<any>();
-  const widgetRef = useRef<any>();
+  const [isScriptLoaded, setIsScriptLoaded] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && (window as any).cloudinary) {
-      cloudinaryRef.current = (window as any).cloudinary;
-      widgetRef.current = cloudinaryRef.current.createUploadWidget(
-        {
-          cloudName: import.meta.env.VITE_CLOUDINARY_CLOUD_NAME,
-          uploadPreset: import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET,
-          sources: ['local', 'url', 'camera'],
-          multiple: true,
-          maxFiles: 10,
-          clientAllowedFormats: ['png', 'jpg', 'jpeg', 'gif', 'webp'],
-          maxFileSize: 10000000,
-          folder: 'request-images',
-        },
-        (error: any, result: any) => {
-          if (!error && result && result.event === 'success') {
-            const newImageUrl = result.info.secure_url;
-            const updatedImages = [...existingImages, newImageUrl];
-            onImagesUploaded(updatedImages);
-          }
-        }
-      );
-    }
-  }, [existingImages, onImagesUploaded]);
+    const checkCloudinary = setInterval(() => {
+      if ((window as any).cloudinary) {
+        setIsScriptLoaded(true);
+        clearInterval(checkCloudinary);
+      }
+    }, 100);
+
+    return () => clearInterval(checkCloudinary);
+  }, []);
 
   const handleOpenWidget = () => {
-    if (widgetRef.current) {
-      widgetRef.current.open();
+    if (!isScriptLoaded || !(window as any).cloudinary) {
+      alert('Cloudinary widget is still loading. Please try again in a moment.');
+      return;
     }
+
+    const widget = (window as any).cloudinary.createUploadWidget(
+      {
+        cloudName: import.meta.env.VITE_CLOUDINARY_CLOUD_NAME,
+        uploadPreset: import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET,
+        sources: ['local', 'url', 'camera'],
+        multiple: true,
+        maxFiles: 10,
+        clientAllowedFormats: ['png', 'jpg', 'jpeg', 'gif', 'webp'],
+        maxFileSize: 10000000,
+        folder: 'request-images',
+      },
+      (error: any, result: any) => {
+        if (error) {
+          console.error('Upload error:', error);
+          return;
+        }
+
+        if (result && result.event === 'success') {
+          const newImageUrl = result.info.secure_url;
+          const updatedImages = [...existingImages, newImageUrl];
+          onImagesUploaded(updatedImages);
+        }
+      }
+    );
+
+    widget.open();
   };
 
   return (
@@ -46,10 +59,11 @@ export default function ImageUploader({ onImagesUploaded, existingImages = [] }:
       <button
         type="button"
         onClick={handleOpenWidget}
-        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        disabled={!isScriptLoaded}
+        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
       >
         <Upload size={18} />
-        Upload Images
+        {isScriptLoaded ? 'Upload Images' : 'Loading...'}
       </button>
 
       {existingImages.length > 0 && (
