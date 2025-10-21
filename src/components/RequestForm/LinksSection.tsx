@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { RequestLink } from '../../lib/firebase';
-import { Plus, ExternalLink, Trash2, X } from 'lucide-react';
+import { Plus, ExternalLink, Trash2, X, Copy } from 'lucide-react';
 
 interface LinksSectionProps {
   requestId?: string;
@@ -40,6 +40,15 @@ export const LinksSection: React.FC<LinksSectionProps> = ({ requestId, links, on
     onLinksChange(links.filter(link => link.id !== linkId));
   };
 
+  const handleCopyLink = (url: string) => {
+    navigator.clipboard.writeText(url).then(() => {
+      alert('Link copied to clipboard!');
+    }).catch((err) => {
+      console.error('Failed to copy link:', err);
+      alert('Failed to copy link');
+    });
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
       <div className="flex items-center justify-between mb-4">
@@ -56,31 +65,38 @@ export const LinksSection: React.FC<LinksSectionProps> = ({ requestId, links, on
       <div className="space-y-3">
         {links.map((link) => (
           <div key={link.id} className="border border-slate-200 rounded-lg p-3">
-            <div className="flex items-start justify-between">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <ExternalLink className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                  <h4 className="font-medium text-slate-800 truncate">{link.name}</h4>
-                </div>
-                <a
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-blue-600 hover:text-blue-700 hover:underline truncate block mb-2"
-                >
-                  {link.url}
-                </a>
-                {link.comments && (
-                  <p className="text-sm text-slate-600 mt-2">{link.comments}</p>
-                )}
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <ExternalLink className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                <h4 className="font-medium text-slate-800 truncate">{link.name}</h4>
               </div>
-              <button
-                onClick={() => handleDeleteLink(link.id)}
-                className="text-slate-400 hover:text-red-600 ml-2"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => window.open(link.url, '_blank', 'noopener,noreferrer')}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  Open
+                </button>
+                <button
+                  onClick={() => handleCopyLink(link.url)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition text-sm font-medium"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  Copy
+                </button>
+                <button
+                  onClick={() => handleDeleteLink(link.id)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition text-sm font-medium"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Delete
+                </button>
+              </div>
             </div>
+            {link.comments && (
+              <p className="text-sm text-slate-600 pl-6">{link.comments}</p>
+            )}
           </div>
         ))}
 
