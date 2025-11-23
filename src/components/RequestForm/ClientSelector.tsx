@@ -143,11 +143,10 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({ selectedClientId
 
             {selectedClientId && clients.find(c => c.id === selectedClientId) && (
               <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
-                <h4 className="font-medium text-slate-800 mb-3">Selected Client Details</h4>
                 {(() => {
                   const client = clients.find(c => c.id === selectedClientId)!;
                   return (
-                    <div className="space-y-2 text-sm">
+                    <div className="text-sm">
                       {client.company && (
                         <div>
                           <span className="font-medium text-slate-700">Company:</span>
@@ -157,24 +156,6 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({ selectedClientId
                           >
                             {client.company}
                           </button>
-                        </div>
-                      )}
-                      {client.contact_name && (
-                        <div>
-                          <span className="font-medium text-slate-700">Contact Name:</span>
-                          <span className="ml-2 text-slate-600">{client.contact_name}</span>
-                        </div>
-                      )}
-                      {client.email && (
-                        <div>
-                          <span className="font-medium text-slate-700">Email:</span>
-                          <span className="ml-2 text-slate-600">{client.email}</span>
-                        </div>
-                      )}
-                      {client.phone && (
-                        <div>
-                          <span className="font-medium text-slate-700">Phone:</span>
-                          <span className="ml-2 text-slate-600">{client.phone}</span>
                         </div>
                       )}
                     </div>
