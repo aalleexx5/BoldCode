@@ -323,13 +323,15 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onClose, o
                 <label className="block text-sm font-medium text-slate-700">
                   Links
                 </label>
-                <button
-                  onClick={() => setShowNewLinkForm(true)}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Link
-                </button>
+                {isEditing && (
+                  <button
+                    onClick={() => setShowNewLinkForm(true)}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Link
+                  </button>
+                )}
               </div>
 
               <div className="space-y-3">
@@ -355,13 +357,15 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onClose, o
                           <Copy className="w-3.5 h-3.5" />
                           Copy
                         </button>
-                        <button
-                          onClick={() => handleDeleteLink(link.id)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition text-sm font-medium"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          Delete
-                        </button>
+                        {isEditing && (
+                          <button
+                            onClick={() => handleDeleteLink(link.id)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition text-sm font-medium"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            Delete
+                          </button>
+                        )}
                       </div>
                     </div>
                     {link.comments && (
