@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { RequestComment } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
-import { Send, MessageSquare } from 'lucide-react';
+import { Send, MessageSquare, Trash2 } from 'lucide-react';
 
 interface CommentsSectionProps {
   comments: RequestComment[];
@@ -25,6 +25,11 @@ export const CommentsSection: React.FC<CommentsSectionProps> = ({ comments, onCo
 
     onCommentsChange([comment, ...comments]);
     setNewComment('');
+  };
+
+  const handleDeleteComment = (commentId: string) => {
+    if (!confirm('Are you sure you want to delete this comment?')) return;
+    onCommentsChange(comments.filter(c => c.id !== commentId));
   };
 
   const formatTimestamp = (dateString: string) => {
@@ -91,6 +96,15 @@ export const CommentsSection: React.FC<CommentsSectionProps> = ({ comments, onCo
                   </p>
                 </div>
               </div>
+              {user && comment.user_id === user.uid && (
+                <button
+                  onClick={() => handleDeleteComment(comment.id)}
+                  className="text-slate-400 hover:text-red-600 transition p-1 rounded hover:bg-red-50"
+                  title="Delete comment"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
             </div>
             <p className="text-sm text-slate-700 mt-2 ml-10">{comment.comment}</p>
           </div>
