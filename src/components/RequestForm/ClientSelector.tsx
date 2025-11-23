@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { db, Client } from '../../lib/firebase';
 import { collection, query, orderBy, getDocs, addDoc, getDoc, doc } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
-import { Plus, X, ExternalLink } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { formatPhoneNumber, validatePhoneNumber } from '../../utils/phoneFormatter';
 
 interface ClientSelectorProps {
@@ -141,16 +141,7 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({ selectedClientId
 
             {selectedClientId && clients.find(c => c.id === selectedClientId) && (
               <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-medium text-slate-800">Selected Client Details</h4>
-                  <button
-                    onClick={() => handleViewClient(selectedClientId)}
-                    className="text-blue-600 hover:text-blue-700 flex items-center gap-1 text-sm font-medium"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    View Full Details
-                  </button>
-                </div>
+                <h4 className="font-medium text-slate-800 mb-3">Selected Client Details</h4>
                 {(() => {
                   const client = clients.find(c => c.id === selectedClientId)!;
                   return (
