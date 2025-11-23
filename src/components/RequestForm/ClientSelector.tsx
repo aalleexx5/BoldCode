@@ -83,6 +83,7 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({ selectedClientId
     try {
       const docRef = await addDoc(collection(db, 'clients'), {
         ...newClient,
+        links: [],
         created_by: user!.uid,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -91,6 +92,7 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({ selectedClientId
       const newClientData = {
         id: docRef.id,
         ...newClient,
+        links: [],
         created_by: user!.uid,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),

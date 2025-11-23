@@ -32,6 +32,7 @@ export type Client = {
   address: string;
   website: string;
   notes: string;
+  links: RequestLink[];
   created_by: string;
   created_at: string;
   updated_at: string;
