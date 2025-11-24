@@ -85,11 +85,11 @@ export type CostTracker = {
 
 export type ActivityLog = {
   id: string;
-  request_id: string;
   user_id: string;
-  action_type: 'created' | 'status_change' | 'due_date_change' | 'details_change';
-  old_value?: string;
-  new_value?: string;
+  user_name: string;
+  action: string;
+  entity_type: 'request' | 'client' | 'cost_tracker' | 'comment' | 'link';
+  entity_id: string;
+  details: string;
   created_at: string;
-  user?: Profile;
 };

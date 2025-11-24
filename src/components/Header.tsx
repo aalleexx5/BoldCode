@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { ChevronDown, LogOut, User } from 'lucide-react';
+import { ChevronDown, LogOut, User, Activity } from 'lucide-react';
 
 interface HeaderProps {
-  currentPage: 'requests' | 'clients';
-  onNavigate: (page: 'requests' | 'clients') => void;
+  currentPage: 'requests' | 'clients' | 'calendar' | 'reports' | 'activity';
+  onNavigate: (page: 'requests' | 'clients' | 'calendar' | 'reports' | 'activity') => void;
+  onOpenProfile: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate }) => {
+export const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onOpenProfile }) => {
   const { profile, signOut } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
 
@@ -47,12 +48,23 @@ export const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate }) => {
               <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-20">
                 <button
                   onClick={() => {
+                    onOpenProfile();
                     setShowDropdown(false);
                   }}
                   className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3"
                 >
                   <User className="w-4 h-4" />
                   Profile
+                </button>
+                <button
+                  onClick={() => {
+                    onNavigate('activity');
+                    setShowDropdown(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3"
+                >
+                  <Activity className="w-4 h-4" />
+                  Activity
                 </button>
                 <hr className="my-2 border-slate-200" />
                 <button
