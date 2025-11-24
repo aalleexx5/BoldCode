@@ -13,12 +13,11 @@ import { CalendarView } from './components/Calendar/CalendarView';
 import { ReportTypeSelector } from './components/Reports/ReportTypeSelector';
 import { ReportsView } from './components/Reports/ReportsView';
 import { ClientReports } from './components/Reports/ClientReports';
-import { ActivityLogView } from './components/Activity/ActivityLog';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  const [currentPage, setCurrentPage] = useState<'requests' | 'clients' | 'calendar' | 'reports' | 'activity'>('requests');
+  const [currentPage, setCurrentPage] = useState<'requests' | 'clients' | 'calendar' | 'reports'>('requests');
   const [selectedRequestId, setSelectedRequestId] = useState<string | undefined>();
   const [calendarFilters, setCalendarFilters] = useState<string[]>([]);
   const [showNewRequest, setShowNewRequest] = useState(false);
@@ -161,10 +160,6 @@ const AppContent: React.FC = () => {
             onFiltersChange={setCalendarFilters}
           />
         )
-      ) : currentPage === 'activity' ? (
-        <ActivityLogView
-          onBack={() => setCurrentPage('requests')}
-        />
       ) : selectedClientId ? (
         <ClientDetail
           clientId={selectedClientId}
