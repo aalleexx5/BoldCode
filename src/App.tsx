@@ -10,7 +10,9 @@ import { ClientList } from './components/Clients/ClientList';
 import { ClientDetail } from './components/Clients/ClientDetail';
 import { NewClientModal } from './components/Clients/NewClientModal';
 import { CalendarView } from './components/Calendar/CalendarView';
+import { ReportTypeSelector } from './components/Reports/ReportTypeSelector';
 import { ReportsView } from './components/Reports/ReportsView';
+import { ClientReports } from './components/Reports/ClientReports';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
@@ -23,6 +25,7 @@ const AppContent: React.FC = () => {
   const [selectedClientId, setSelectedClientId] = useState<string | undefined>();
   const [showNewClient, setShowNewClient] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [reportType, setReportType] = useState<'selector' | 'team' | 'client'>('selector');
 
   if (loading) {
     return (
@@ -108,10 +111,31 @@ const AppContent: React.FC = () => {
               setRefreshTrigger((prev) => prev + 1);
             }}
           />
-        ) : (
+        ) : reportType === 'selector' ? (
+          <ReportTypeSelector
+            onSelectType={(type) => setReportType(type)}
+            onBack={() => {
+              setCurrentPage('requests');
+              setReportType('selector');
+            }}
+          />
+        ) : reportType === 'team' ? (
           <ReportsView
-            onBack={() => setCurrentPage('requests')}
+            onBack={() => {
+              setCurrentPage('requests');
+              setReportType('selector');
+            }}
             onSelectRequest={setSelectedRequestId}
+            onSwitchToClientReports={() => setReportType('client')}
+          />
+        ) : (
+          <ClientReports
+            onBack={() => {
+              setCurrentPage('requests');
+              setReportType('selector');
+            }}
+            onSelectRequest={setSelectedRequestId}
+            onSwitchToTeamReports={() => setReportType('team')}
           />
         )
       ) : currentPage === 'calendar' ? (

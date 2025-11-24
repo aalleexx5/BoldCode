@@ -1,25 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { db, Request, CostTracker, Profile, Client } from '../../lib/firebase';
-import { collection, getDocs, query, where } from 'firebase/firestore';
-import { ArrowLeft, FileText, ArrowUpDown, Printer, Building2 } from 'lucide-react';
+import { db, Request, CostTracker, Client } from '../../lib/firebase';
+import { collection, getDocs } from 'firebase/firestore';
+import { ArrowLeft, Building2, ArrowUpDown, Printer, FileText } from 'lucide-react';
 
-interface ReportsViewProps {
+interface ClientReportsProps {
   onBack: () => void;
   onSelectRequest?: (requestId: string) => void;
-  onSwitchToClientReports: () => void;
+  onSwitchToTeamReports: () => void;
 }
 
 interface ReportEntry {
   requestId: string;
   requestNumber: string;
-  teamMember: string;
   client: string;
+  teamMember: string;
   hoursSpent: number;
   date: string;
   notes: string;
 }
 
-interface TeamMember {
+interface ClientOption {
   id: string;
   name: string;
 }
@@ -38,7 +38,7 @@ const getDefaultDateRange = () => {
   };
 };
 
-export const ReportsView: React.FC<ReportsViewProps> = ({ onBack, onSelectRequest, onSwitchToClientReports }) => {
+export const ClientReports: React.FC<ClientReportsProps> = ({ onBack, onSelectRequest, onSwitchToTeamReports }) => {
   const [reportData, setReportData] = useState<ReportEntry[]>([]);
   const [sortedData, setSortedData] = useState<ReportEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -49,38 +49,38 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ onBack, onSelectReques
   });
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [selectedMember, setSelectedMember] = useState<string>('all');
+  const [clients, setClients] = useState<ClientOption[]>([]);
+  const [selectedClient, setSelectedClient] = useState<string>('all');
 
   useEffect(() => {
-    loadTeamMembers();
+    loadClients();
   }, []);
 
   useEffect(() => {
     loadReport();
-  }, [dateRange, selectedMember]);
+  }, [dateRange, selectedClient]);
 
   useEffect(() => {
     applySorting();
   }, [reportData, sortField, sortDirection]);
 
-  const loadTeamMembers = async () => {
+  const loadClients = async () => {
     try {
-      const profilesSnapshot = await getDocs(collection(db, 'profiles'));
-      const members: TeamMember[] = [];
+      const clientsSnapshot = await getDocs(collection(db, 'clients'));
+      const clientList: ClientOption[] = [];
 
-      profilesSnapshot.docs.forEach(doc => {
-        const profile = doc.data() as Profile;
-        members.push({
+      clientsSnapshot.docs.forEach(doc => {
+        const client = doc.data() as Client;
+        clientList.push({
           id: doc.id,
-          name: profile.full_name || profile.email
+          name: client.company
         });
       });
 
-      members.sort((a, b) => a.name.localeCompare(b.name));
-      setTeamMembers(members);
+      clientList.sort((a, b) => a.name.localeCompare(b.name));
+      setClients(clientList);
     } catch (error) {
-      console.error('Error loading team members:', error);
+      console.error('Error loading clients:', error);
     }
   };
 
@@ -121,9 +121,9 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ onBack, onSelectReques
         requests.set(doc.id, { id: doc.id, ...doc.data() } as Request);
       });
 
-      const clients = new Map<string, Client>();
+      const clientsMap = new Map<string, Client>();
       clientsSnapshot.docs.forEach(doc => {
-        clients.set(doc.id, { id: doc.id, ...doc.data() } as Client);
+        clientsMap.set(doc.id, { id: doc.id, ...doc.data() } as Client);
       });
 
       const startDate = new Date(dateRange.start);
@@ -138,17 +138,18 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ onBack, onSelectReques
         const trackerDate = new Date(tracker.date);
 
         if (trackerDate >= startDate && trackerDate <= endDate) {
-          if (selectedMember === 'all' || tracker.user_id === selectedMember) {
-            const request = requests.get(tracker.request_id);
+          const request = requests.get(tracker.request_id);
 
-            if (request) {
-              const client = request.client_id ? clients.get(request.client_id) : null;
+          if (request) {
+            const client = request.client_id ? clientsMap.get(request.client_id) : null;
+            const clientName = client?.company || 'No Client';
 
+            if (selectedClient === 'all' || request.client_id === selectedClient) {
               entries.push({
                 requestId: tracker.request_id,
                 requestNumber: request.request_number,
+                client: clientName,
                 teamMember: tracker.user_name,
-                client: client?.company || 'No Client',
                 hoursSpent: tracker.time_spent,
                 date: tracker.date,
                 notes: tracker.notes || '',
@@ -195,16 +196,16 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ onBack, onSelectReques
       <div className="bg-white shadow-sm border-b border-slate-200 px-6 py-4 print:shadow-none">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <FileText className="w-6 h-6 text-slate-700" />
-            <h2 className="text-xl font-semibold text-slate-800">Team Member Reports</h2>
+            <Building2 className="w-6 h-6 text-slate-700" />
+            <h2 className="text-xl font-semibold text-slate-800">Client Reports</h2>
           </div>
           <div className="flex items-center gap-3 print:hidden">
             <button
-              onClick={onSwitchToClientReports}
+              onClick={onSwitchToTeamReports}
               className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition font-medium"
             >
-              <Building2 className="w-4 h-4" />
-              Client Reports
+              <FileText className="w-4 h-4" />
+              Team Member Reports
             </button>
             <button
               onClick={handlePrint}
@@ -225,16 +226,16 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ onBack, onSelectReques
 
         <div className="mt-4 flex items-center gap-6 flex-wrap print:hidden">
           <div className="flex items-center gap-3">
-            <span className="text-sm text-slate-700 font-medium">Team Member:</span>
+            <span className="text-sm text-slate-700 font-medium">Client:</span>
             <select
-              value={selectedMember}
-              onChange={(e) => setSelectedMember(e.target.value)}
+              value={selectedClient}
+              onChange={(e) => setSelectedClient(e.target.value)}
               className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[200px]"
             >
-              <option value="all">All Team Members</option>
-              {teamMembers.map((member) => (
-                <option key={member.id} value={member.id}>
-                  {member.name}
+              <option value="all">All Clients</option>
+              {clients.map((client) => (
+                <option key={client.id} value={client.id}>
+                  {client.name}
                 </option>
               ))}
             </select>
@@ -285,10 +286,10 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ onBack, onSelectReques
                         </button>
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                        Team Member
+                        Client
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                        Client
+                        Team Member
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
                         Hours Spent
@@ -330,10 +331,10 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ onBack, onSelectReques
                             </button>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                            {entry.teamMember}
+                            {entry.client}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                            {entry.client}
+                            {entry.teamMember}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                             {entry.hoursSpent.toFixed(1)}
