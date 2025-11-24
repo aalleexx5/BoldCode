@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { db, Client } from '../../lib/firebase';
+import { db, Client, RequestLink } from '../../lib/firebase';
 import { collection, query, orderBy, getDocs, addDoc, getDoc, doc } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, ExternalLink, Copy } from 'lucide-react';
 import { formatPhoneNumber, validatePhoneNumber } from '../../utils/phoneFormatter';
 
 interface ClientSelectorProps {
@@ -351,6 +351,54 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({ selectedClientId
                   Notes
                 </label>
                 <p className="text-slate-900 whitespace-pre-wrap">{popupClient.notes || '-'}</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-3">
+                  Links
+                </label>
+                <div className="space-y-3">
+                  {popupClient.links && popupClient.links.length > 0 ? (
+                    popupClient.links.map((link: RequestLink) => (
+                      <div key={link.id} className="border border-slate-200 rounded-lg p-3">
+                        <div className="flex items-center justify-between gap-3 mb-2">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <ExternalLink className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                            <h4 className="font-medium text-slate-800 truncate">{link.name}</h4>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => window.open(link.url, '_blank', 'noopener,noreferrer')}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                              Open
+                            </button>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(link.url).then(() => {
+                                  alert('Link copied to clipboard!');
+                                }).catch((err) => {
+                                  console.error('Failed to copy link:', err);
+                                  alert('Failed to copy link');
+                                });
+                              }}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition text-sm font-medium"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                              Copy
+                            </button>
+                          </div>
+                        </div>
+                        {link.comments && (
+                          <p className="text-sm text-slate-600 pl-6">{link.comments}</p>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-slate-500 text-center py-6">No links added yet</p>
+                  )}
+                </div>
               </div>
             </div>
           </div>
