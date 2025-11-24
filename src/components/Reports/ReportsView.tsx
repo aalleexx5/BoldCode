@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db, Request, CostTracker, Profile, Client } from '../../lib/firebase';
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import { ArrowLeft, FileText } from 'lucide-react';
+import { ArrowLeft, FileText, ArrowUpDown, Printer } from 'lucide-react';
 
 interface ReportsViewProps {
   onBack: () => void;
@@ -18,6 +18,9 @@ interface ReportEntry {
   notes: string;
 }
 
+type SortField = 'request' | 'date';
+type SortDirection = 'asc' | 'desc';
+
 const getDefaultDateRange = () => {
   const endDate = new Date();
   const startDate = new Date();
@@ -32,18 +35,50 @@ const getDefaultDateRange = () => {
 export const ReportsView: React.FC<ReportsViewProps> = ({ onBack, onSelectRequest }) => {
   const [reportType, setReportType] = useState<'all' | 'single-member' | 'single-client'>('all');
   const [reportData, setReportData] = useState<ReportEntry[]>([]);
+  const [sortedData, setSortedData] = useState<ReportEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const defaultRange = getDefaultDateRange();
   const [dateRange, setDateRange] = useState({
     start: defaultRange.start,
     end: defaultRange.end
   });
+  const [sortField, setSortField] = useState<SortField>('date');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   useEffect(() => {
     if (reportType === 'all') {
       loadAllTeamMembersReport();
     }
   }, [reportType, dateRange]);
+
+  useEffect(() => {
+    applySorting();
+  }, [reportData, sortField, sortDirection]);
+
+  const applySorting = () => {
+    const sorted = [...reportData].sort((a, b) => {
+      let comparison = 0;
+
+      if (sortField === 'date') {
+        comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+      } else if (sortField === 'request') {
+        comparison = a.requestNumber.localeCompare(b.requestNumber);
+      }
+
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+
+    setSortedData(sorted);
+  };
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
+    }
+  };
 
   const loadAllTeamMembersReport = async () => {
     setLoading(true);
@@ -92,8 +127,6 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ onBack, onSelectReques
         }
       });
 
-      entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
       setReportData(entries);
     } catch (error) {
       console.error('Error loading report:', error);
@@ -118,24 +151,41 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ onBack, onSelectReques
     }
   };
 
+  const calculateTotalHours = () => {
+    return sortedData.reduce((total, entry) => total + entry.hoursSpent, 0);
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <div className="flex-1 flex flex-col bg-slate-50">
-      <div className="bg-white shadow-sm border-b border-slate-200 px-6 py-4">
+      <div className="bg-white shadow-sm border-b border-slate-200 px-6 py-4 print:shadow-none">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <FileText className="w-6 h-6 text-slate-700" />
-            <h2 className="text-xl font-semibold text-slate-800">Reports</h2>
+            <h2 className="text-xl font-semibold text-slate-800">Team Member Reports</h2>
           </div>
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition font-medium"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to List
-          </button>
+          <div className="flex items-center gap-3 print:hidden">
+            <button
+              onClick={handlePrint}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+            >
+              <Printer className="w-4 h-4" />
+              Print Report
+            </button>
+            <button
+              onClick={onBack}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition font-medium"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to List
+            </button>
+          </div>
         </div>
 
-        <div className="mt-4 flex items-center gap-6 flex-wrap">
+        <div className="mt-4 flex items-center gap-6 flex-wrap print:hidden">
           <div className="flex items-center gap-4">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -199,70 +249,105 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ onBack, onSelectReques
             <div className="text-slate-500">Loading report...</div>
           </div>
         ) : reportType === 'all' ? (
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-slate-50 border-b border-slate-200">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                      Request #
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                      Team Member
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                      Client
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                      Hours Spent
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                      Date
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                      Notes
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-slate-200">
-                  {reportData.length === 0 ? (
+          <div className="space-y-4">
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden print:shadow-none">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-slate-50 border-b border-slate-200">
                     <tr>
-                      <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
-                        No time entries found for the selected date range
-                      </td>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
+                        <button
+                          onClick={() => handleSort('request')}
+                          className="flex items-center gap-1 hover:text-blue-600 transition print:pointer-events-none"
+                        >
+                          Request # <ArrowUpDown className="w-4 h-4 print:hidden" />
+                          {sortField === 'request' && (
+                            <span className="text-xs print:hidden">
+                              {sortDirection === 'asc' ? '↑' : '↓'}
+                            </span>
+                          )}
+                        </button>
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
+                        Team Member
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
+                        Client
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
+                        Hours Spent
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
+                        <button
+                          onClick={() => handleSort('date')}
+                          className="flex items-center gap-1 hover:text-blue-600 transition print:pointer-events-none"
+                        >
+                          Date <ArrowUpDown className="w-4 h-4 print:hidden" />
+                          {sortField === 'date' && (
+                            <span className="text-xs print:hidden">
+                              {sortDirection === 'asc' ? '↑' : '↓'}
+                            </span>
+                          )}
+                        </button>
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
+                        Notes
+                      </th>
                     </tr>
-                  ) : (
-                    reportData.map((entry, index) => (
-                      <tr key={index} className="hover:bg-slate-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button
-                            onClick={() => handleRequestClick(entry.requestId)}
-                            className="text-blue-600 hover:text-blue-800 hover:underline"
-                          >
-                            {entry.requestNumber}
-                          </button>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                          {entry.teamMember}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                          {entry.client}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                          {entry.hoursSpent.toFixed(1)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                          {formatDate(entry.date)}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-slate-700">
-                          {entry.notes || '-'}
+                  </thead>
+                  <tbody className="bg-white divide-y divide-slate-200">
+                    {sortedData.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
+                          No time entries found for the selected date range
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : (
+                      sortedData.map((entry, index) => (
+                        <tr key={index} className="hover:bg-slate-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button
+                              onClick={() => handleRequestClick(entry.requestId)}
+                              className="text-blue-600 hover:text-blue-800 hover:underline print:text-slate-900 print:no-underline print:pointer-events-none"
+                            >
+                              {entry.requestNumber}
+                            </button>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                            {entry.teamMember}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                            {entry.client}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                            {entry.hoursSpent.toFixed(1)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                            {formatDate(entry.date)}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-slate-700">
+                            {entry.notes || '-'}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
+
+            {sortedData.length > 0 && (
+              <div className="bg-white rounded-lg shadow-sm border border-slate-200 px-6 py-4 print:shadow-none">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-slate-700">
+                    Total Hours:
+                  </span>
+                  <span className="text-lg font-semibold text-slate-900">
+                    {calculateTotalHours().toFixed(1)} hours
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-8">

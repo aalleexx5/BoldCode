@@ -36,3 +36,34 @@
   color: #94a3b8;
   font-style: normal;
 }
+
+@media print {
+  @page {
+    margin: 0.5in;
+  }
+
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .print\:hidden {
+    display: none !important;
+  }
+
+  .print\:shadow-none {
+    box-shadow: none !important;
+  }
+
+  .print\:text-slate-900 {
+    color: #0f172a !important;
+  }
+
+  .print\:no-underline {
+    text-decoration: none !important;
+  }
+
+  .print\:pointer-events-none {
+    pointer-events: none !important;
+  }
+}
