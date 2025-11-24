@@ -27,9 +27,9 @@ type SortField = 'request' | 'date';
 type SortDirection = 'asc' | 'desc';
 
 const getDefaultDateRange = () => {
-  const endDate = new Date();
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - 30);
+  const today = new Date();
+  const startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+  const endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
   return {
     start: startDate.toISOString().split('T')[0],
