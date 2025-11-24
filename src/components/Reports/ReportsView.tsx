@@ -72,7 +72,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ onBack, onSelectReques
         const profile = doc.data() as Profile;
         members.push({
           id: doc.id,
-          name: profile.name || profile.email
+          name: profile.full_name || profile.email
         });
       });
 
