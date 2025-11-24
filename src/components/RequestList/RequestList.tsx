@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { db, Request } from '../../lib/firebase';
+import { db, Request, Client } from '../../lib/firebase';
 import { collection, query, orderBy, getDocs, doc, getDoc, setDoc, writeBatch } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
 import { Search, RefreshCw, Plus, Pin, ArrowUpDown, CheckSquare, Square, Calendar, FileText } from 'lucide-react';
 import { RequestItem } from './RequestItem';
 
-type SortField = 'request_number' | 'title' | 'due_date' | 'status' | 'request_type' | 'creator_name' | 'assigned_to_name';
+type SortField = 'request_number' | 'title' | 'client_name' | 'due_date' | 'status' | 'request_type' | 'creator_name' | 'assigned_to_name';
 type SortDirection = 'asc' | 'desc';
 
 interface RequestListProps {
@@ -106,6 +106,14 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
           (requestData as any).assigned_to_name = 'Everyone';
         }
 
+        if (requestData.client_id) {
+          const clientDoc = await getDoc(doc(db, 'clients', requestData.client_id));
+          if (clientDoc.exists()) {
+            const clientData = clientDoc.data() as Client;
+            (requestData as any).client_name = clientData.company;
+          }
+        }
+
         requestsData.push(requestData);
       }
 
@@ -145,6 +153,11 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
       if (sortField === 'assigned_to_name') {
         aValue = (a as any).assigned_to_name || '';
         bValue = (b as any).assigned_to_name || '';
+      }
+
+      if (sortField === 'client_name') {
+        aValue = (a as any).client_name || '';
+        bValue = (b as any).client_name || '';
       }
 
       if (!aValue) aValue = '';
@@ -347,7 +360,7 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
                 </div>
               </div>
             )}
-            <div className="grid grid-cols-[50px_120px_1fr_120px_140px_140px_160px_160px] gap-4 px-6 py-4 bg-slate-50 border-b border-slate-200 font-medium text-sm text-slate-700">
+            <div className="grid grid-cols-[50px_120px_1fr_160px_120px_140px_140px_160px_160px] gap-4 px-6 py-4 bg-slate-50 border-b border-slate-200 font-medium text-sm text-slate-700">
               <button
                 onClick={toggleSelectAll}
                 className="flex items-center justify-center hover:text-blue-600 transition"
@@ -370,6 +383,12 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
                 className="flex items-center gap-1 hover:text-blue-600 transition text-left"
               >
                 Title <ArrowUpDown className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => handleSort('client_name')}
+                className="flex items-center gap-1 hover:text-blue-600 transition text-left"
+              >
+                Client <ArrowUpDown className="w-4 h-4" />
               </button>
               <button
                 onClick={() => handleSort('due_date')}

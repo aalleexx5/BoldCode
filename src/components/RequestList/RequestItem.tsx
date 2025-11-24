@@ -33,7 +33,7 @@ export const RequestItem: React.FC<RequestItemProps> = ({ request, onClick, isSe
 
   return (
     <div
-      className={`grid grid-cols-[50px_120px_1fr_120px_140px_140px_160px_160px] gap-4 px-6 py-4 hover:bg-slate-50 transition ${
+      className={`grid grid-cols-[50px_120px_1fr_160px_120px_140px_140px_160px_160px] gap-4 px-6 py-4 hover:bg-slate-50 transition ${
         isSelected ? 'bg-blue-50' : ''
       }`}
     >
@@ -45,6 +45,7 @@ export const RequestItem: React.FC<RequestItemProps> = ({ request, onClick, isSe
       </button>
       <div onClick={onClick} className="text-sm font-medium text-slate-900 cursor-pointer">{request.request_number}</div>
       <div onClick={onClick} className="text-sm text-slate-900 truncate cursor-pointer">{request.title}</div>
+      <div onClick={onClick} className="text-sm text-slate-600 truncate cursor-pointer">{(request as any).client_name || '-'}</div>
       <div onClick={onClick} className="text-sm text-slate-600 cursor-pointer">{formatDate(request.due_date)}</div>
       <div onClick={onClick} className="cursor-pointer">
         <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[request.status]}`}>
