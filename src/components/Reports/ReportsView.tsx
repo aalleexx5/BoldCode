@@ -18,6 +18,11 @@ interface ReportEntry {
   notes: string;
 }
 
+interface TeamMember {
+  id: string;
+  name: string;
+}
+
 type SortField = 'request' | 'date';
 type SortDirection = 'asc' | 'desc';
 
@@ -33,7 +38,6 @@ const getDefaultDateRange = () => {
 };
 
 export const ReportsView: React.FC<ReportsViewProps> = ({ onBack, onSelectRequest }) => {
-  const [reportType, setReportType] = useState<'all' | 'single-member' | 'single-client'>('all');
   const [reportData, setReportData] = useState<ReportEntry[]>([]);
   const [sortedData, setSortedData] = useState<ReportEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -44,16 +48,40 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ onBack, onSelectReques
   });
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [selectedMember, setSelectedMember] = useState<string>('all');
 
   useEffect(() => {
-    if (reportType === 'all') {
-      loadAllTeamMembersReport();
-    }
-  }, [reportType, dateRange]);
+    loadTeamMembers();
+  }, []);
+
+  useEffect(() => {
+    loadReport();
+  }, [dateRange, selectedMember]);
 
   useEffect(() => {
     applySorting();
   }, [reportData, sortField, sortDirection]);
+
+  const loadTeamMembers = async () => {
+    try {
+      const profilesSnapshot = await getDocs(collection(db, 'profiles'));
+      const members: TeamMember[] = [];
+
+      profilesSnapshot.docs.forEach(doc => {
+        const profile = doc.data() as Profile;
+        members.push({
+          id: doc.id,
+          name: profile.name || profile.email
+        });
+      });
+
+      members.sort((a, b) => a.name.localeCompare(b.name));
+      setTeamMembers(members);
+    } catch (error) {
+      console.error('Error loading team members:', error);
+    }
+  };
 
   const applySorting = () => {
     const sorted = [...reportData].sort((a, b) => {
@@ -80,7 +108,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ onBack, onSelectReques
     }
   };
 
-  const loadAllTeamMembersReport = async () => {
+  const loadReport = async () => {
     setLoading(true);
     try {
       const costTrackersSnapshot = await getDocs(collection(db, 'cost_trackers'));
@@ -109,20 +137,22 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ onBack, onSelectReques
         const trackerDate = new Date(tracker.date);
 
         if (trackerDate >= startDate && trackerDate <= endDate) {
-          const request = requests.get(tracker.request_id);
+          if (selectedMember === 'all' || tracker.user_id === selectedMember) {
+            const request = requests.get(tracker.request_id);
 
-          if (request) {
-            const client = request.client_id ? clients.get(request.client_id) : null;
+            if (request) {
+              const client = request.client_id ? clients.get(request.client_id) : null;
 
-            entries.push({
-              requestId: tracker.request_id,
-              requestNumber: request.request_number,
-              teamMember: tracker.user_name,
-              client: client?.company || 'No Client',
-              hoursSpent: tracker.time_spent,
-              date: tracker.date,
-              notes: tracker.notes || '',
-            });
+              entries.push({
+                requestId: tracker.request_id,
+                requestNumber: request.request_number,
+                teamMember: tracker.user_name,
+                client: client?.company || 'No Client',
+                hoursSpent: tracker.time_spent,
+                date: tracker.date,
+                notes: tracker.notes || '',
+              });
+            }
           }
         }
       });
@@ -186,60 +216,38 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ onBack, onSelectReques
         </div>
 
         <div className="mt-4 flex items-center gap-6 flex-wrap print:hidden">
-          <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="reportType"
-                value="all"
-                checked={reportType === 'all'}
-                onChange={(e) => setReportType(e.target.value as any)}
-                className="w-4 h-4 text-blue-600"
-              />
-              <span className="text-sm text-slate-700">All Team Members</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="reportType"
-                value="single-member"
-                checked={reportType === 'single-member'}
-                onChange={(e) => setReportType(e.target.value as any)}
-                className="w-4 h-4 text-blue-600"
-              />
-              <span className="text-sm text-slate-700">Single Team Member</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="reportType"
-                value="single-client"
-                checked={reportType === 'single-client'}
-                onChange={(e) => setReportType(e.target.value as any)}
-                className="w-4 h-4 text-blue-600"
-              />
-              <span className="text-sm text-slate-700">Single Client</span>
-            </label>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-slate-700 font-medium">Team Member:</span>
+            <select
+              value={selectedMember}
+              onChange={(e) => setSelectedMember(e.target.value)}
+              className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[200px]"
+            >
+              <option value="all">All Team Members</option>
+              {teamMembers.map((member) => (
+                <option key={member.id} value={member.id}>
+                  {member.name}
+                </option>
+              ))}
+            </select>
           </div>
 
-          {reportType === 'all' && (
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-slate-700 font-medium">Date Range:</span>
-              <input
-                type="date"
-                value={dateRange.start}
-                onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-                className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <span className="text-slate-500">to</span>
-              <input
-                type="date"
-                value={dateRange.end}
-                onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-                className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          )}
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-slate-700 font-medium">Date Range:</span>
+            <input
+              type="date"
+              value={dateRange.start}
+              onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
+              className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <span className="text-slate-500">to</span>
+            <input
+              type="date"
+              value={dateRange.end}
+              onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
+              className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
         </div>
       </div>
 
@@ -248,7 +256,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ onBack, onSelectReques
           <div className="flex items-center justify-center h-64">
             <div className="text-slate-500">Loading report...</div>
           </div>
-        ) : reportType === 'all' ? (
+        ) : (
           <div className="space-y-4">
             <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden print:shadow-none">
               <div className="overflow-x-auto">
@@ -348,14 +356,6 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ onBack, onSelectReques
                 </div>
               </div>
             )}
-          </div>
-        ) : (
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-8">
-            <p className="text-center text-slate-500">
-              {reportType === 'single-member'
-                ? 'Single Team Member report - Coming soon'
-                : 'Single Client report - Coming soon'}
-            </p>
           </div>
         )}
       </div>
