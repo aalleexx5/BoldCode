@@ -5,26 +5,45 @@ import { ArrowLeft, FileText } from 'lucide-react';
 
 interface ReportsViewProps {
   onBack: () => void;
+  onSelectRequest?: (requestId: string) => void;
 }
 
 interface ReportEntry {
+  requestId: string;
   requestNumber: string;
   teamMember: string;
   client: string;
   hoursSpent: number;
-  lastNotes: string;
+  date: string;
+  notes: string;
 }
 
-export const ReportsView: React.FC<ReportsViewProps> = ({ onBack }) => {
+const getDefaultDateRange = () => {
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - 30);
+
+  return {
+    start: startDate.toISOString().split('T')[0],
+    end: endDate.toISOString().split('T')[0]
+  };
+};
+
+export const ReportsView: React.FC<ReportsViewProps> = ({ onBack, onSelectRequest }) => {
   const [reportType, setReportType] = useState<'all' | 'single-member' | 'single-client'>('all');
   const [reportData, setReportData] = useState<ReportEntry[]>([]);
   const [loading, setLoading] = useState(false);
+  const defaultRange = getDefaultDateRange();
+  const [dateRange, setDateRange] = useState({
+    start: defaultRange.start,
+    end: defaultRange.end
+  });
 
   useEffect(() => {
     if (reportType === 'all') {
       loadAllTeamMembersReport();
     }
-  }, [reportType]);
+  }, [reportType, dateRange]);
 
   const loadAllTeamMembersReport = async () => {
     setLoading(true);
@@ -43,37 +62,37 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ onBack }) => {
         clients.set(doc.id, { id: doc.id, ...doc.data() } as Client);
       });
 
-      const entriesMap = new Map<string, ReportEntry>();
+      const startDate = new Date(dateRange.start);
+      startDate.setHours(0, 0, 0, 0);
+      const endDate = new Date(dateRange.end);
+      endDate.setHours(23, 59, 59, 999);
+
+      const entries: ReportEntry[] = [];
 
       costTrackersSnapshot.docs.forEach(doc => {
         const tracker = doc.data() as CostTracker;
-        const request = requests.get(tracker.request_id);
+        const trackerDate = new Date(tracker.date);
 
-        if (request) {
-          const key = `${tracker.request_id}-${tracker.user_id}`;
-          const existingEntry = entriesMap.get(key);
+        if (trackerDate >= startDate && trackerDate <= endDate) {
+          const request = requests.get(tracker.request_id);
 
-          const client = request.client_id ? clients.get(request.client_id) : null;
+          if (request) {
+            const client = request.client_id ? clients.get(request.client_id) : null;
 
-          if (existingEntry) {
-            existingEntry.hoursSpent += tracker.time_spent;
-            if (tracker.notes && tracker.notes.trim()) {
-              existingEntry.lastNotes = tracker.notes;
-            }
-          } else {
-            entriesMap.set(key, {
+            entries.push({
+              requestId: tracker.request_id,
               requestNumber: request.request_number,
               teamMember: tracker.user_name,
               client: client?.company || 'No Client',
               hoursSpent: tracker.time_spent,
-              lastNotes: tracker.notes || '',
+              date: tracker.date,
+              notes: tracker.notes || '',
             });
           }
         }
       });
 
-      const entries = Array.from(entriesMap.values());
-      entries.sort((a, b) => b.hoursSpent - a.hoursSpent);
+      entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
       setReportData(entries);
     } catch (error) {
@@ -81,6 +100,21 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ onBack }) => {
       alert('Failed to load report data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const handleRequestClick = (requestId: string) => {
+    if (onSelectRequest) {
+      onSelectRequest(requestId);
     }
   };
 
@@ -101,40 +135,61 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ onBack }) => {
           </button>
         </div>
 
-        <div className="mt-4 flex items-center gap-4">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="radio"
-              name="reportType"
-              value="all"
-              checked={reportType === 'all'}
-              onChange={(e) => setReportType(e.target.value as any)}
-              className="w-4 h-4 text-blue-600"
-            />
-            <span className="text-sm text-slate-700">All Team Members</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="radio"
-              name="reportType"
-              value="single-member"
-              checked={reportType === 'single-member'}
-              onChange={(e) => setReportType(e.target.value as any)}
-              className="w-4 h-4 text-blue-600"
-            />
-            <span className="text-sm text-slate-700">Single Team Member</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="radio"
-              name="reportType"
-              value="single-client"
-              checked={reportType === 'single-client'}
-              onChange={(e) => setReportType(e.target.value as any)}
-              className="w-4 h-4 text-blue-600"
-            />
-            <span className="text-sm text-slate-700">Single Client</span>
-          </label>
+        <div className="mt-4 flex items-center gap-6 flex-wrap">
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="reportType"
+                value="all"
+                checked={reportType === 'all'}
+                onChange={(e) => setReportType(e.target.value as any)}
+                className="w-4 h-4 text-blue-600"
+              />
+              <span className="text-sm text-slate-700">All Team Members</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="reportType"
+                value="single-member"
+                checked={reportType === 'single-member'}
+                onChange={(e) => setReportType(e.target.value as any)}
+                className="w-4 h-4 text-blue-600"
+              />
+              <span className="text-sm text-slate-700">Single Team Member</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="reportType"
+                value="single-client"
+                checked={reportType === 'single-client'}
+                onChange={(e) => setReportType(e.target.value as any)}
+                className="w-4 h-4 text-blue-600"
+              />
+              <span className="text-sm text-slate-700">Single Client</span>
+            </label>
+          </div>
+
+          {reportType === 'all' && (
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-slate-700 font-medium">Date Range:</span>
+              <input
+                type="date"
+                value={dateRange.start}
+                onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
+                className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <span className="text-slate-500">to</span>
+              <input
+                type="date"
+                value={dateRange.end}
+                onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
+                className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -162,22 +217,30 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ onBack }) => {
                       Hours Spent
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                      Last Notes
+                      Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
+                      Notes
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
                   {reportData.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
-                        No time entries found
+                      <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
+                        No time entries found for the selected date range
                       </td>
                     </tr>
                   ) : (
                     reportData.map((entry, index) => (
                       <tr key={index} className="hover:bg-slate-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                          {entry.requestNumber}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button
+                            onClick={() => handleRequestClick(entry.requestId)}
+                            className="text-blue-600 hover:text-blue-800 hover:underline"
+                          >
+                            {entry.requestNumber}
+                          </button>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                           {entry.teamMember}
@@ -188,8 +251,11 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ onBack }) => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                           {entry.hoursSpent.toFixed(1)}
                         </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                          {formatDate(entry.date)}
+                        </td>
                         <td className="px-6 py-4 text-sm text-slate-700">
-                          {entry.lastNotes || '-'}
+                          {entry.notes || '-'}
                         </td>
                       </tr>
                     ))

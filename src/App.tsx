@@ -95,7 +95,25 @@ const AppContent: React.FC = () => {
           />
         )
       ) : currentPage === 'reports' ? (
-        <ReportsView onBack={() => setCurrentPage('requests')} />
+        selectedRequestId ? (
+          <RequestForm
+            requestId={selectedRequestId}
+            onClose={() => {
+              setSelectedRequestId(undefined);
+              setCurrentPage('reports');
+            }}
+            onSave={() => {
+              setSelectedRequestId(undefined);
+              setCurrentPage('reports');
+              setRefreshTrigger((prev) => prev + 1);
+            }}
+          />
+        ) : (
+          <ReportsView
+            onBack={() => setCurrentPage('requests')}
+            onSelectRequest={setSelectedRequestId}
+          />
+        )
       ) : currentPage === 'calendar' ? (
         selectedRequestId ? (
           <RequestForm
