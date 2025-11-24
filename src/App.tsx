@@ -10,11 +10,12 @@ import { ClientList } from './components/Clients/ClientList';
 import { ClientDetail } from './components/Clients/ClientDetail';
 import { NewClientModal } from './components/Clients/NewClientModal';
 import { CalendarView } from './components/Calendar/CalendarView';
+import { ReportsView } from './components/Reports/ReportsView';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  const [currentPage, setCurrentPage] = useState<'requests' | 'clients' | 'calendar'>('requests');
+  const [currentPage, setCurrentPage] = useState<'requests' | 'clients' | 'calendar' | 'reports'>('requests');
   const [selectedRequestId, setSelectedRequestId] = useState<string | undefined>();
   const [calendarFilters, setCalendarFilters] = useState<string[]>([]);
   const [showNewRequest, setShowNewRequest] = useState(false);
@@ -89,9 +90,12 @@ const AppContent: React.FC = () => {
               setCalendarFilters(filters);
               setCurrentPage('calendar');
             }}
+            onNavigateToReports={() => setCurrentPage('reports')}
             refreshTrigger={refreshTrigger}
           />
         )
+      ) : currentPage === 'reports' ? (
+        <ReportsView onBack={() => setCurrentPage('requests')} />
       ) : currentPage === 'calendar' ? (
         selectedRequestId ? (
           <RequestForm

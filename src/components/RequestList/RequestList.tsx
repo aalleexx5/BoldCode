@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { db, Request } from '../../lib/firebase';
 import { collection, query, orderBy, getDocs, doc, getDoc, setDoc, writeBatch } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
-import { Search, RefreshCw, Plus, Pin, ArrowUpDown, CheckSquare, Square, Calendar } from 'lucide-react';
+import { Search, RefreshCw, Plus, Pin, ArrowUpDown, CheckSquare, Square, Calendar, FileText } from 'lucide-react';
 import { RequestItem } from './RequestItem';
 
 type SortField = 'request_number' | 'title' | 'due_date' | 'status' | 'request_type' | 'creator_name' | 'assigned_to_name';
@@ -13,6 +13,7 @@ interface RequestListProps {
   onNewRequest: () => void;
   onNavigateToClients: () => void;
   onNavigateToCalendar: (filters: string[]) => void;
+  onNavigateToReports: () => void;
   refreshTrigger: number;
 }
 
@@ -26,7 +27,7 @@ const STATUS_OPTIONS = [
   { value: 'canceled', label: 'Canceled' },
 ];
 
-export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNewRequest, onNavigateToClients, onNavigateToCalendar, refreshTrigger }) => {
+export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNewRequest, onNavigateToClients, onNavigateToCalendar, onNavigateToReports, refreshTrigger }) => {
   const { user } = useAuth();
   const [requests, setRequests] = useState<Request[]>([]);
   const [filteredRequests, setFilteredRequests] = useState<Request[]>([]);
@@ -251,6 +252,13 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
             >
               <Plus className="w-5 h-5" />
               New Request
+            </button>
+            <button
+              onClick={onNavigateToReports}
+              className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition font-medium flex items-center gap-2"
+            >
+              <FileText className="w-4 h-4" />
+              Reports
             </button>
             <button
               onClick={onNavigateToClients}
