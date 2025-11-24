@@ -74,6 +74,9 @@ export type Request = {
 export type CostTracker = {
   id: string;
   request_id: string;
+  user_id: string;
+  user_name: string;
+  date: string;
   time_spent: number;
   notes: string;
   created_at: string;
