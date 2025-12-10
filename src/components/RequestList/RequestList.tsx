@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { db, Request, Client } from '../../lib/firebase';
-import { collection, query, orderBy, getDocs, doc, getDoc, setDoc, writeBatch } from 'firebase/firestore';
+import { db, Request, Client, Profile } from '../../lib/firebase';
+import { collection, query, orderBy, getDocs, doc, getDoc, setDoc, writeBatch, limit, where, startAfter, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
-import { Search, RefreshCw, Plus, Pin, ArrowUpDown, CheckSquare, Square, Calendar, FileText } from 'lucide-react';
+import { Search, RefreshCw, Plus, Pin, ArrowUpDown, CheckSquare, Square, Calendar, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 import { RequestItem } from './RequestItem';
 
 type SortField = 'request_number' | 'title' | 'client_name' | 'due_date' | 'status' | 'request_type' | 'creator_name' | 'assigned_to_name';
@@ -40,6 +40,10 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
   const [selectedRequests, setSelectedRequests] = useState<Set<string>>(new Set());
   const [bulkStatus, setBulkStatus] = useState<string>('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const [totalPages, setTotalPages] = useState(1);
+  const [allRequestsCache, setAllRequestsCache] = useState<Request[]>([]);
 
   useEffect(() => {
     if (user) {
@@ -48,8 +52,13 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
   }, [user]);
 
   useEffect(() => {
+    setCurrentPage(1);
     loadRequests();
   }, [refreshTrigger]);
+
+  useEffect(() => {
+    loadRequests();
+  }, [currentPage, pageSize]);
 
   useEffect(() => {
     applyFilters();
@@ -86,38 +95,85 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
   const loadRequests = async () => {
     setLoading(true);
     try {
-      const q = query(collection(db, 'requests'), orderBy('created_at', 'desc'));
-      const querySnapshot = await getDocs(q);
-      const requestsData: Request[] = [];
+      const allRequestsQuery = query(collection(db, 'requests'), orderBy('created_at', 'desc'));
+      const allRequestsSnapshot = await getDocs(allRequestsQuery);
+      const totalCount = allRequestsSnapshot.size;
+      const calculatedTotalPages = Math.ceil(totalCount / pageSize);
+      setTotalPages(calculatedTotalPages);
 
-      for (const docSnap of querySnapshot.docs) {
-        const requestData = { id: docSnap.id, ...docSnap.data() } as Request;
-        const userDoc = await getDoc(doc(db, 'profiles', requestData.created_by));
-        if (userDoc.exists()) {
-          (requestData as any).creator_name = userDoc.data().full_name;
+      const startIndex = (currentPage - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      const paginatedDocs = allRequestsSnapshot.docs.slice(startIndex, endIndex);
+
+      const requestsData: Request[] = paginatedDocs.map((docSnap) => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+      } as Request));
+
+      const userIds = new Set<string>();
+      const clientIds = new Set<string>();
+
+      requestsData.forEach((request) => {
+        userIds.add(request.created_by);
+        if (request.assigned_to && request.assigned_to !== 'Everyone') {
+          userIds.add(request.assigned_to);
         }
-
-        if (requestData.assigned_to && requestData.assigned_to !== 'Everyone') {
-          const assignedDoc = await getDoc(doc(db, 'profiles', requestData.assigned_to));
-          if (assignedDoc.exists()) {
-            (requestData as any).assigned_to_name = assignedDoc.data().full_name;
-          }
-        } else if (requestData.assigned_to === 'Everyone') {
-          (requestData as any).assigned_to_name = 'Everyone';
+        if (request.client_id) {
+          clientIds.add(request.client_id);
         }
+      });
 
-        if (requestData.client_id) {
-          const clientDoc = await getDoc(doc(db, 'clients', requestData.client_id));
-          if (clientDoc.exists()) {
-            const clientData = clientDoc.data() as Client;
-            (requestData as any).client_name = clientData.company;
-          }
-        }
+      const profilesMap = new Map<string, Profile>();
+      const clientsMap = new Map<string, Client>();
 
-        requestsData.push(requestData);
+      const userIdsArray = Array.from(userIds);
+      for (let i = 0; i < userIdsArray.length; i += 10) {
+        const batch = userIdsArray.slice(i, i + 10);
+        const profilesQuery = query(collection(db, 'profiles'), where('__name__', 'in', batch));
+        const profilesSnapshot = await getDocs(profilesQuery);
+        profilesSnapshot.docs.forEach((doc) => {
+          profilesMap.set(doc.id, { id: doc.id, ...doc.data() } as Profile);
+        });
       }
 
+      const clientIdsArray = Array.from(clientIds);
+      for (let i = 0; i < clientIdsArray.length; i += 10) {
+        const batch = clientIdsArray.slice(i, i + 10);
+        const clientsQuery = query(collection(db, 'clients'), where('__name__', 'in', batch));
+        const clientsSnapshot = await getDocs(clientsQuery);
+        clientsSnapshot.docs.forEach((doc) => {
+          clientsMap.set(doc.id, { id: doc.id, ...doc.data() } as Client);
+        });
+      }
+
+      requestsData.forEach((request) => {
+        const creator = profilesMap.get(request.created_by);
+        if (creator) {
+          (request as any).creator_name = creator.full_name;
+        }
+
+        if (request.assigned_to === 'Everyone') {
+          (request as any).assigned_to_name = 'Everyone';
+        } else if (request.assigned_to) {
+          const assignedUser = profilesMap.get(request.assigned_to);
+          if (assignedUser) {
+            (request as any).assigned_to_name = assignedUser.full_name;
+          }
+        }
+
+        if (request.client_id) {
+          const client = clientsMap.get(request.client_id);
+          if (client) {
+            (request as any).client_name = client.company;
+          }
+        }
+      });
+
       setRequests(requestsData);
+      setAllRequestsCache(allRequestsSnapshot.docs.map((docSnap) => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+      } as Request)));
     } catch (error) {
       console.error('Error loading requests:', error);
     } finally {
@@ -312,6 +368,45 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
             <Pin className="w-4 h-4" />
           </button>
         </div>
+
+        <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-200">
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-slate-600">Show:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            <span className="text-sm text-slate-600">per page</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <span className="text-sm text-slate-700 px-3">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="flex-1 overflow-auto p-6">
@@ -431,6 +526,30 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
                   onToggleSelect={() => toggleSelectRequest(request.id)}
                 />
               ))}
+            </div>
+            <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-t border-slate-200">
+              <div className="text-sm text-slate-600">
+                Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filteredRequests.length)} of {filteredRequests.length} requests
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="p-2 text-slate-600 hover:bg-white rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <span className="text-sm text-slate-700 px-3">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="p-2 text-slate-600 hover:bg-white rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
             </div>
           </div>
         )}
