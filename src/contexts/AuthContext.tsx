@@ -8,7 +8,6 @@ import {
   User
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { requestNotificationPermission, setupForegroundNotifications } from '../lib/notifications';
 
 interface AuthContextType {
   user: User | null;
@@ -39,11 +38,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(user);
       if (user) {
         await loadProfile(user.uid);
-        setupForegroundNotifications();
-
-        setTimeout(() => {
-          requestNotificationPermission(user.uid);
-        }, 2000);
       } else {
         setProfile(null);
         setLoading(false);
