@@ -9,6 +9,7 @@ import { CommentsSection } from './CommentsSection';
 import { CostTrackerSection } from './CostTrackerSection';
 import { RichTextEditor } from './RichTextEditor';
 import { AssignedToSelector } from './AssignedToSelector';
+import { sendNotification } from '../../lib/notifications';
 
 interface RequestFormProps {
   requestId?: string;
@@ -210,6 +211,18 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
           created_by: user!.uid,
           created_at: createdAt,
         });
+
+        if (assignedTo && assignedTo !== user!.uid) {
+          await sendNotification(
+            assignedTo,
+            'New Request Assigned',
+            `You have been assigned to: ${title}`,
+            {
+              requestId: docRef.id,
+              requestNumber: requestNumber,
+            }
+          );
+        }
 
         setHasChanges(false);
         onSave(docRef.id);

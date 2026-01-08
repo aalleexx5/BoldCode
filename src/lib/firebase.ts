@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getMessaging, Messaging } from 'firebase/messaging';
 
 const firebaseConfig = {
   apiKey: "AIzaSyAlgl_5ww2V01BR_aQqPSzjprqVxzzP3WY",
@@ -14,6 +15,12 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+let messaging: Messaging | null = null;
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+  messaging = getMessaging(app);
+}
+export { messaging };
 
 export type Profile = {
   id: string;
