@@ -23,6 +23,8 @@ const REQUEST_TYPES = [
   'Brand Design',
   'Brand Management',
   'Budgeting & Strategy',
+  'Business Development',
+  'Business Operations',
   'Client Interaction',
   'Company Events',
   'Design for Print',
