@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { db } from '../../lib/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
-import { updatePassword } from 'firebase/auth';
+import { updatePassword, updateEmail } from 'firebase/auth';
 import { X, Upload, User } from 'lucide-react';
 
 interface ProfileProps {
@@ -12,6 +12,7 @@ interface ProfileProps {
 export const Profile: React.FC<ProfileProps> = ({ onClose }) => {
   const { user, profile } = useAuth();
   const [fullName, setFullName] = useState(profile?.full_name || '');
+  const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [profileImage, setProfileImage] = useState(profile?.profile_image || '');
@@ -94,6 +95,51 @@ export const Profile: React.FC<ProfileProps> = ({ onClose }) => {
         setError('Please sign out and sign back in before changing your password');
       } else {
         setError(err.message || 'Failed to update password');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChangeEmail = async () => {
+    setError('');
+    setMessage('');
+
+    if (!newEmail) {
+      setError('Please enter a new email address');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newEmail)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    if (newEmail === user?.email) {
+      setError('New email is the same as current email');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await updateEmail(user!, newEmail);
+      await updateDoc(doc(db, 'profiles', user!.uid), {
+        email: newEmail,
+        updated_at: new Date().toISOString(),
+      });
+      setMessage('Email updated successfully!');
+      setNewEmail('');
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (err: any) {
+      if (err.code === 'auth/requires-recent-login') {
+        setError('Please sign out and sign back in before changing your email');
+      } else if (err.code === 'auth/email-already-in-use') {
+        setError('This email is already in use by another account');
+      } else {
+        setError(err.message || 'Failed to update email');
       }
     } finally {
       setLoading(false);
@@ -183,7 +229,7 @@ export const Profile: React.FC<ProfileProps> = ({ onClose }) => {
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Email
+                  Current Email
                 </label>
                 <input
                   type="email"
@@ -191,7 +237,6 @@ export const Profile: React.FC<ProfileProps> = ({ onClose }) => {
                   disabled
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-slate-100 text-slate-500 cursor-not-allowed"
                 />
-                <p className="text-xs text-slate-500 mt-1">Email cannot be changed</p>
               </div>
 
               <button
@@ -201,6 +246,36 @@ export const Profile: React.FC<ProfileProps> = ({ onClose }) => {
               >
                 {loading ? 'Saving...' : 'Save Profile'}
               </button>
+            </div>
+          </div>
+
+          <div className="bg-slate-50 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-slate-800 mb-4">Change Email</h3>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  New Email Address
+                </label>
+                <input
+                  type="email"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter new email address"
+                />
+              </div>
+
+              <button
+                onClick={handleChangeEmail}
+                disabled={loading}
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium disabled:opacity-50"
+              >
+                {loading ? 'Updating...' : 'Update Email'}
+              </button>
+              <p className="text-xs text-slate-500">
+                Note: You may need to sign in again after changing your email
+              </p>
             </div>
           </div>
 
