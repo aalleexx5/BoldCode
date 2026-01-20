@@ -59,6 +59,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
   const [status, setStatus] = useState<string>('submitted');
   const [dueDate, setDueDate] = useState('');
   const [assignedTo, setAssignedTo] = useState<string>('');
+  const [previousAssignedTo, setPreviousAssignedTo] = useState<string>('');
   const [details, setDetails] = useState('');
   const [clientId, setClientId] = useState<string>('');
   const [createdAt, setCreatedAt] = useState('');
@@ -109,6 +110,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         setStatus(data.status);
         setDueDate(data.due_date || '');
         setAssignedTo(data.assigned_to || '');
+        setPreviousAssignedTo(data.assigned_to || '');
         setDetails(data.details || '');
         setClientId(data.client_id || '');
         setCreatedAt(data.created_at);
@@ -180,6 +182,53 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
     }
   };
 
+  const sendAssignmentEmail = async (assignedUserId: string) => {
+    try {
+      const profileDoc = await getDoc(doc(db, 'profiles', assignedUserId));
+      if (!profileDoc.exists()) {
+        console.error('Profile not found for user:', assignedUserId);
+        return;
+      }
+
+      const profile = profileDoc.data();
+      const assignedUserEmail = profile.email;
+      const assignedUserName = profile.full_name;
+
+      if (!assignedUserEmail) {
+        console.error('No email found for user:', assignedUserId);
+        return;
+      }
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      const edgeFunctionUrl = `${supabaseUrl}/functions/v1/send-assignment-email`;
+
+      const response = await fetch(edgeFunctionUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to: assignedUserEmail,
+          requestNumber: requestNumber,
+          requestTitle: title,
+          dueDate: dueDate || undefined,
+          assignedUserName: assignedUserName,
+        }),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        console.log('Assignment email sent successfully');
+      } else {
+        console.error('Failed to send assignment email:', result.error);
+      }
+    } catch (error) {
+      console.error('Error sending assignment email:', error);
+    }
+  };
+
   const handleSave = async () => {
     if (!title.trim()) {
       alert('Please enter a request title');
@@ -202,9 +251,17 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         updated_at: new Date().toISOString(),
       };
 
+      const assignmentChanged = assignedTo && assignedTo !== previousAssignedTo && assignedTo !== 'Everyone';
+
       if (requestId) {
         await updateDoc(doc(db, 'requests', requestId), requestData);
         setHasChanges(false);
+        setPreviousAssignedTo(assignedTo);
+
+        if (assignmentChanged) {
+          await sendAssignmentEmail(assignedTo);
+        }
+
         onSave();
       } else {
         const docRef = await addDoc(collection(db, 'requests'), {
@@ -214,6 +271,12 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         });
 
         setHasChanges(false);
+        setPreviousAssignedTo(assignedTo);
+
+        if (assignedTo && assignedTo !== 'Everyone') {
+          await sendAssignmentEmail(assignedTo);
+        }
+
         onSave(docRef.id);
       }
     } catch (error) {
