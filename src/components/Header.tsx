@@ -3,11 +3,12 @@ import { useAuth } from '../contexts/AuthContext';
 import { ChevronDown, LogOut, User } from 'lucide-react';
 
 interface HeaderProps {
-  currentPage: 'requests' | 'clients';
-  onNavigate: (page: 'requests' | 'clients') => void;
+  currentPage: 'requests' | 'clients' | 'calendar' | 'reports';
+  onNavigate: (page: 'requests' | 'clients' | 'calendar' | 'reports') => void;
+  onOpenProfile: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate }) => {
+export const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onOpenProfile }) => {
   const { profile, signOut } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
 
@@ -48,6 +49,7 @@ export const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate }) => {
                 <button
                   onClick={() => {
                     setShowDropdown(false);
+                    onOpenProfile();
                   }}
                   className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3"
                 >
