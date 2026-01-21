@@ -61,6 +61,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
   const [dueDate, setDueDate] = useState('');
   const [assignedTo, setAssignedTo] = useState<string>('');
   const [previousAssignedTo, setPreviousAssignedTo] = useState<string>('');
+  const [previousStatus, setPreviousStatus] = useState<string>('');
   const [details, setDetails] = useState('');
   const [clientId, setClientId] = useState<string>('');
   const [createdAt, setCreatedAt] = useState('');
@@ -109,6 +110,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         setTitle(data.title);
         setRequestType(data.request_type);
         setStatus(data.status);
+        setPreviousStatus(data.status);
         setDueDate(data.due_date || '');
         setAssignedTo(data.assigned_to || '');
         setPreviousAssignedTo(data.assigned_to || '');
@@ -180,6 +182,70 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
     } catch (error) {
       console.error('Error generating request number:', error);
       return '0001';
+    }
+  };
+
+  const sendStatusChangeEmail = async (newStatus: string, oldStatus: string) => {
+    if (!assignedTo || assignedTo === 'Everyone') {
+      return;
+    }
+
+    try {
+      console.log('='.repeat(60));
+      console.log('📧 SENDING STATUS CHANGE EMAIL');
+      console.log('='.repeat(60));
+      console.log('Status changed from:', oldStatus, 'to:', newStatus);
+      console.log('Assigned User ID:', assignedTo);
+
+      const profileDoc = await getDoc(doc(db, 'profiles', assignedTo));
+      if (!profileDoc.exists()) {
+        console.error('❌ Profile not found for user:', assignedTo);
+        return;
+      }
+
+      const profile = profileDoc.data();
+      const assignedUserEmail = profile.email;
+      const assignedUserName = profile.full_name;
+
+      console.log('✓ Notifying:', assignedUserName, '(', assignedUserEmail, ')');
+
+      if (!assignedUserEmail) {
+        console.error('❌ No email found for user:', assignedTo);
+        return;
+      }
+
+      const emailjsServiceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+      const emailjsTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+      const emailjsPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+
+      if (!emailjsServiceId || !emailjsTemplateId || !emailjsPublicKey) {
+        console.error('❌ EmailJS configuration incomplete!');
+        return;
+      }
+
+      const templateParams = {
+        to_email: assignedUserEmail,
+        to_name: assignedUserName,
+        request_number: requestNumber,
+        request_title: `${title} - Status Updated to: ${newStatus.toUpperCase()}`,
+        due_date: dueDate ? new Date(dueDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Not specified',
+      };
+
+      console.log('📤 Sending status change notification...');
+
+      const result = await emailjs.send(
+        emailjsServiceId,
+        emailjsTemplateId,
+        templateParams,
+        emailjsPublicKey
+      );
+
+      if (result.status === 200) {
+        console.log('✅ Status change email sent successfully');
+        console.log('='.repeat(60));
+      }
+    } catch (error) {
+      console.error('❌ Failed to send status change email:', error);
     }
   };
 
@@ -311,14 +377,18 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
       };
 
       const assignmentChanged = assignedTo && assignedTo !== previousAssignedTo && assignedTo !== 'Everyone';
+      const statusChanged = status !== previousStatus;
 
       if (requestId) {
         await updateDoc(doc(db, 'requests', requestId), requestData);
         setHasChanges(false);
         setPreviousAssignedTo(assignedTo);
+        setPreviousStatus(status);
 
         if (assignmentChanged) {
           await sendAssignmentEmail(assignedTo);
+        } else if (statusChanged) {
+          await sendStatusChangeEmail(status, previousStatus);
         }
 
         onSave();
