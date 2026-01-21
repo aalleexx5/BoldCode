@@ -185,11 +185,16 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
 
   const sendAssignmentEmail = async (assignedUserId: string) => {
     try {
-      console.log('Starting email send process for user:', assignedUserId);
+      console.log('='.repeat(60));
+      console.log('📧 STARTING EMAIL SEND PROCESS');
+      console.log('='.repeat(60));
+      console.log('Assigned User ID:', assignedUserId);
+      console.log('Request Number:', requestNumber);
+      console.log('Request Title:', title);
 
       const profileDoc = await getDoc(doc(db, 'profiles', assignedUserId));
       if (!profileDoc.exists()) {
-        console.error('Profile not found for user:', assignedUserId);
+        console.error('❌ Profile not found for user:', assignedUserId);
         alert(`ERROR: Profile not found for assigned user. Cannot send email.`);
         return;
       }
@@ -198,10 +203,12 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
       const assignedUserEmail = profile.email;
       const assignedUserName = profile.full_name;
 
-      console.log('Found user profile:', { email: assignedUserEmail, name: assignedUserName });
+      console.log('✓ User profile found:');
+      console.log('  - Name:', assignedUserName);
+      console.log('  - Email:', assignedUserEmail);
 
       if (!assignedUserEmail) {
-        console.error('No email found for user:', assignedUserId);
+        console.error('❌ No email found for user:', assignedUserId);
         alert(`ERROR: No email address found for ${assignedUserName}. Cannot send notification.`);
         return;
       }
@@ -210,8 +217,18 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
       const emailjsTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
       const emailjsPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
+      console.log('📋 EmailJS Configuration:');
+      console.log('  - Service ID:', emailjsServiceId ? `${emailjsServiceId.substring(0, 8)}...` : '❌ MISSING');
+      console.log('  - Template ID:', emailjsTemplateId ? `${emailjsTemplateId.substring(0, 12)}...` : '❌ MISSING');
+      console.log('  - Public Key:', emailjsPublicKey ? `${emailjsPublicKey.substring(0, 8)}...` : '❌ MISSING');
+
       if (!emailjsServiceId || !emailjsTemplateId || !emailjsPublicKey) {
-        console.error('EmailJS configuration missing');
+        console.error('❌ EmailJS configuration incomplete!');
+        console.error('Missing:', {
+          serviceId: !emailjsServiceId,
+          templateId: !emailjsTemplateId,
+          publicKey: !emailjsPublicKey
+        });
         alert('ERROR: Email service not configured. Please contact administrator.');
         return;
       }
@@ -224,7 +241,14 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         due_date: dueDate ? new Date(dueDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Not specified',
       };
 
-      console.log('Sending email via EmailJS with params:', templateParams);
+      console.log('📤 Template Parameters:');
+      console.log('  - to_email:', templateParams.to_email);
+      console.log('  - to_name:', templateParams.to_name);
+      console.log('  - request_number:', templateParams.request_number);
+      console.log('  - request_title:', templateParams.request_title);
+      console.log('  - due_date:', templateParams.due_date);
+      console.log('');
+      console.log('🚀 Calling EmailJS API...');
 
       const result = await emailjs.send(
         emailjsServiceId,
@@ -233,16 +257,34 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         emailjsPublicKey
       );
 
+      console.log('📨 EmailJS Response:', result);
+      console.log('  - Status:', result.status);
+      console.log('  - Text:', result.text);
+
       if (result.status === 200) {
-        console.log('✅ Assignment email sent successfully to:', assignedUserEmail);
-        alert(`Email notification sent to ${assignedUserName} (${assignedUserEmail})`);
+        console.log('✅ SUCCESS! Email sent to:', assignedUserEmail);
+        console.log('='.repeat(60));
+        alert(`✓ Email notification sent successfully to ${assignedUserName} (${assignedUserEmail})`);
       } else {
-        console.error('❌ Failed to send assignment email:', result);
-        alert(`ERROR: Failed to send email notification. Status: ${result.status}`);
+        console.error('⚠️ Unexpected status code:', result.status);
+        console.error('Full result:', result);
+        console.log('='.repeat(60));
+        alert(`WARNING: Email may not have been sent. Status: ${result.status}`);
       }
     } catch (error) {
-      console.error('❌ Error sending assignment email:', error);
-      alert(`ERROR: Failed to send email notification: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('='.repeat(60));
+      console.error('❌ EMAIL SEND ERROR');
+      console.error('='.repeat(60));
+      console.error('Error type:', error instanceof Error ? error.constructor.name : typeof error);
+      console.error('Error message:', error instanceof Error ? error.message : String(error));
+      console.error('Full error:', error);
+
+      if (error instanceof Error && error.message) {
+        console.error('Stack trace:', error.stack);
+      }
+
+      console.log('='.repeat(60));
+      alert(`ERROR: Failed to send email notification.\n\nError: ${error instanceof Error ? error.message : 'Unknown error'}\n\nCheck browser console (F12) for details.`);
     }
   };
 
