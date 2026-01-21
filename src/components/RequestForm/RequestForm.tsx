@@ -184,9 +184,12 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
 
   const sendAssignmentEmail = async (assignedUserId: string) => {
     try {
+      console.log('Starting email send process for user:', assignedUserId);
+
       const profileDoc = await getDoc(doc(db, 'profiles', assignedUserId));
       if (!profileDoc.exists()) {
         console.error('Profile not found for user:', assignedUserId);
+        alert(`ERROR: Profile not found for assigned user. Cannot send email.`);
         return;
       }
 
@@ -194,14 +197,26 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
       const assignedUserEmail = profile.email;
       const assignedUserName = profile.full_name;
 
+      console.log('Found user profile:', { email: assignedUserEmail, name: assignedUserName });
+
       if (!assignedUserEmail) {
         console.error('No email found for user:', assignedUserId);
+        alert(`ERROR: No email address found for ${assignedUserName}. Cannot send notification.`);
         return;
       }
 
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       const edgeFunctionUrl = `${supabaseUrl}/functions/v1/send-assignment-email`;
+
+      console.log('Calling edge function:', edgeFunctionUrl);
+      console.log('Payload:', {
+        to: assignedUserEmail,
+        requestNumber: requestNumber,
+        requestTitle: title,
+        dueDate: dueDate || undefined,
+        assignedUserName: assignedUserName,
+      });
 
       const response = await fetch(edgeFunctionUrl, {
         method: 'POST',
@@ -218,14 +233,21 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         }),
       });
 
+      console.log('Response status:', response.status);
+
       const result = await response.json();
+      console.log('Response body:', result);
+
       if (result.success) {
-        console.log('Assignment email sent successfully');
+        console.log('✅ Assignment email sent successfully to:', assignedUserEmail);
+        alert(`Email notification sent to ${assignedUserName} (${assignedUserEmail})`);
       } else {
-        console.error('Failed to send assignment email:', result.error);
+        console.error('❌ Failed to send assignment email:', result.error);
+        alert(`ERROR: Failed to send email notification: ${result.error}`);
       }
     } catch (error) {
-      console.error('Error sending assignment email:', error);
+      console.error('❌ Error sending assignment email:', error);
+      alert(`ERROR: Failed to send email notification: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
