@@ -9,6 +9,7 @@ import { CommentsSection } from './CommentsSection';
 import { CostTrackerSection } from './CostTrackerSection';
 import { RichTextEditor } from './RichTextEditor';
 import { AssignedToSelector } from './AssignedToSelector';
+import emailjs from '@emailjs/browser';
 
 interface RequestFormProps {
   requestId?: string;
@@ -205,45 +206,39 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         return;
       }
 
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      const edgeFunctionUrl = `${supabaseUrl}/functions/v1/send-assignment-email`;
+      const emailjsServiceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+      const emailjsTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+      const emailjsPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
-      console.log('Calling edge function:', edgeFunctionUrl);
-      console.log('Payload:', {
-        to: assignedUserEmail,
-        requestNumber: requestNumber,
-        requestTitle: title,
-        dueDate: dueDate || undefined,
-        assignedUserName: assignedUserName,
-      });
+      if (!emailjsServiceId || !emailjsTemplateId || !emailjsPublicKey) {
+        console.error('EmailJS configuration missing');
+        alert('ERROR: Email service not configured. Please contact administrator.');
+        return;
+      }
 
-      const response = await fetch(edgeFunctionUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${supabaseAnonKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          to: assignedUserEmail,
-          requestNumber: requestNumber,
-          requestTitle: title,
-          dueDate: dueDate || undefined,
-          assignedUserName: assignedUserName,
-        }),
-      });
+      const templateParams = {
+        to_email: assignedUserEmail,
+        to_name: assignedUserName,
+        request_number: requestNumber,
+        request_title: title,
+        due_date: dueDate ? new Date(dueDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Not specified',
+      };
 
-      console.log('Response status:', response.status);
+      console.log('Sending email via EmailJS with params:', templateParams);
 
-      const result = await response.json();
-      console.log('Response body:', result);
+      const result = await emailjs.send(
+        emailjsServiceId,
+        emailjsTemplateId,
+        templateParams,
+        emailjsPublicKey
+      );
 
-      if (result.success) {
+      if (result.status === 200) {
         console.log('✅ Assignment email sent successfully to:', assignedUserEmail);
         alert(`Email notification sent to ${assignedUserName} (${assignedUserEmail})`);
       } else {
-        console.error('❌ Failed to send assignment email:', result.error);
-        alert(`ERROR: Failed to send email notification: ${result.error}`);
+        console.error('❌ Failed to send assignment email:', result);
+        alert(`ERROR: Failed to send email notification. Status: ${result.status}`);
       }
     } catch (error) {
       console.error('❌ Error sending assignment email:', error);
