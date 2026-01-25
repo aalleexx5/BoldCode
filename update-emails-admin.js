@@ -1,15 +1,44 @@
 import admin from 'firebase-admin';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
+
+// Check if service account file exists
+if (!existsSync('./firebase-service-account.json')) {
+  console.error('\n❌ ERROR: firebase-service-account.json not found!\n');
+  console.log('Please follow these steps:\n');
+  console.log('1. Go to Firebase Console: https://console.firebase.google.com/');
+  console.log('2. Select your project: job-tracker-6df94');
+  console.log('3. Click ⚙️  → Project settings → Service accounts tab');
+  console.log('4. Click "Generate new private key"');
+  console.log('5. Download the JSON file');
+  console.log('6. Rename it to: firebase-service-account.json');
+  console.log('7. Place it in the project root folder (same folder as package.json)\n');
+  console.log('For detailed instructions, see: FIREBASE_ADMIN_SETUP.md\n');
+  process.exit(1);
+}
 
 // Initialize Firebase Admin SDK
-// You'll need to download your service account key from Firebase Console
-const serviceAccount = JSON.parse(
-  readFileSync('./firebase-service-account.json', 'utf8')
-);
+let serviceAccount;
+try {
+  serviceAccount = JSON.parse(
+    readFileSync('./firebase-service-account.json', 'utf8')
+  );
+} catch (error) {
+  console.error('\n❌ ERROR: Could not read firebase-service-account.json');
+  console.error('Make sure the file is valid JSON.\n');
+  console.error('Error details:', error.message, '\n');
+  process.exit(1);
+}
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
+try {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+  });
+} catch (error) {
+  console.error('\n❌ ERROR: Could not initialize Firebase Admin SDK');
+  console.error('Make sure the service account file is valid.\n');
+  console.error('Error details:', error.message, '\n');
+  process.exit(1);
+}
 
 const db = admin.firestore();
 const auth = admin.auth();
