@@ -215,7 +215,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
       }
 
       const emailjsServiceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-      const emailjsTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+      const emailjsTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_STATUS_UPDATE;
       const emailjsPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
       if (!emailjsServiceId || !emailjsTemplateId || !emailjsPublicKey) {
@@ -280,7 +280,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
       }
 
       const emailjsServiceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-      const emailjsTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+      const emailjsTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_NEW_REQUEST;
       const emailjsPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
       console.log('📋 EmailJS Configuration:');
