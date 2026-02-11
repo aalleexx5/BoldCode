@@ -227,7 +227,9 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         to_email: assignedUserEmail,
         to_name: assignedUserName,
         request_number: requestNumber,
-        request_title: `${title} - Status Updated to: ${newStatus.toUpperCase()}`,
+        request_title: title,
+        new_status: newStatus,
+        old_status: oldStatus,
         due_date: dueDate ? new Date(dueDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Not specified',
       };
 
