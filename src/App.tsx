@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Login } from './components/Auth/Login';
 import { Register } from './components/Auth/Register';
@@ -13,6 +13,7 @@ import { CalendarView } from './components/Calendar/CalendarView';
 import { ReportTypeSelector } from './components/Reports/ReportTypeSelector';
 import { ReportsView } from './components/Reports/ReportsView';
 import { ClientReports } from './components/Reports/ClientReports';
+import emailjs from '@emailjs/browser';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
@@ -185,6 +186,16 @@ const AppContent: React.FC = () => {
 };
 
 function App() {
+  useEffect(() => {
+    const emailjsPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+    if (emailjsPublicKey) {
+      emailjs.init(emailjsPublicKey);
+      console.log('✅ EmailJS initialized successfully');
+    } else {
+      console.error('❌ EmailJS public key not found in environment variables');
+    }
+  }, []);
+
   return (
     <AuthProvider>
       <AppContent />

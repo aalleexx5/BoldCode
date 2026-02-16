@@ -187,6 +187,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
 
   const sendStatusChangeEmail = async (newStatus: string, oldStatus: string) => {
     if (!assignedTo || assignedTo === 'Everyone') {
+      console.log('⚠️ Skipping status change email: No specific user assigned');
       return;
     }
 
@@ -200,6 +201,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
       const profileDoc = await getDoc(doc(db, 'profiles', assignedTo));
       if (!profileDoc.exists()) {
         console.error('❌ Profile not found for user:', assignedTo);
+        alert(`ERROR: Profile not found for assigned user. Cannot send status update email.`);
         return;
       }
 
@@ -211,6 +213,7 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
 
       if (!assignedUserEmail) {
         console.error('❌ No email found for user:', assignedTo);
+        alert(`ERROR: No email address found for ${assignedUserName}. Cannot send status update notification.`);
         return;
       }
 
@@ -218,8 +221,14 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
       const emailjsTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_STATUS_UPDATE;
       const emailjsPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
+      console.log('📋 EmailJS Configuration:');
+      console.log('  - Service ID:', emailjsServiceId ? `${emailjsServiceId.substring(0, 8)}...` : '❌ MISSING');
+      console.log('  - Template ID:', emailjsTemplateId ? `${emailjsTemplateId.substring(0, 12)}...` : '❌ MISSING');
+      console.log('  - Public Key:', emailjsPublicKey ? `${emailjsPublicKey.substring(0, 8)}...` : '❌ MISSING');
+
       if (!emailjsServiceId || !emailjsTemplateId || !emailjsPublicKey) {
         console.error('❌ EmailJS configuration incomplete!');
+        alert('ERROR: Email service not configured. Please contact administrator.');
         return;
       }
 
@@ -233,7 +242,16 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         due_date: dueDate ? new Date(dueDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Not specified',
       };
 
-      console.log('📤 Sending status change notification...');
+      console.log('📤 Template Parameters:');
+      console.log('  - to_email:', templateParams.to_email);
+      console.log('  - to_name:', templateParams.to_name);
+      console.log('  - request_number:', templateParams.request_number);
+      console.log('  - request_title:', templateParams.request_title);
+      console.log('  - new_status:', templateParams.new_status);
+      console.log('  - old_status:', templateParams.old_status);
+      console.log('  - due_date:', templateParams.due_date);
+      console.log('');
+      console.log('🚀 Calling EmailJS API...');
 
       const result = await emailjs.send(
         emailjsServiceId,
@@ -242,12 +260,34 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         emailjsPublicKey
       );
 
+      console.log('📨 EmailJS Response:', result);
+      console.log('  - Status:', result.status);
+      console.log('  - Text:', result.text);
+
       if (result.status === 200) {
-        console.log('✅ Status change email sent successfully');
+        console.log('✅ SUCCESS! Status change email sent to:', assignedUserEmail);
         console.log('='.repeat(60));
+        alert(`✓ Status update email sent successfully to ${assignedUserName} (${assignedUserEmail})`);
+      } else {
+        console.error('⚠️ Unexpected status code:', result.status);
+        console.error('Full result:', result);
+        console.log('='.repeat(60));
+        alert(`WARNING: Status update email may not have been sent. Status: ${result.status}`);
       }
     } catch (error) {
-      console.error('❌ Failed to send status change email:', error);
+      console.error('='.repeat(60));
+      console.error('❌ EMAIL SEND ERROR');
+      console.error('='.repeat(60));
+      console.error('Error type:', error instanceof Error ? error.constructor.name : typeof error);
+      console.error('Error message:', error instanceof Error ? error.message : String(error));
+      console.error('Full error:', error);
+
+      if (error instanceof Error && error.message) {
+        console.error('Stack trace:', error.stack);
+      }
+
+      console.log('='.repeat(60));
+      alert(`ERROR: Failed to send status update email.\n\nError: ${error instanceof Error ? error.message : 'Unknown error'}\n\nCheck browser console (F12) for details.`);
     }
   };
 
@@ -381,6 +421,15 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
       const assignmentChanged = assignedTo && assignedTo !== previousAssignedTo && assignedTo !== 'Everyone';
       const statusChanged = status !== previousStatus;
 
+      console.log('📋 Email Logic Check:');
+      console.log('  - assignedTo:', assignedTo);
+      console.log('  - previousAssignedTo:', previousAssignedTo);
+      console.log('  - status:', status);
+      console.log('  - previousStatus:', previousStatus);
+      console.log('  - assignmentChanged:', assignmentChanged);
+      console.log('  - statusChanged:', statusChanged);
+      console.log('  - requestId:', requestId ? 'Update' : 'New');
+
       if (requestId) {
         await updateDoc(doc(db, 'requests', requestId), requestData);
         setHasChanges(false);
@@ -388,9 +437,13 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         setPreviousStatus(status);
 
         if (assignmentChanged) {
+          console.log('✉️ Sending assignment email (assignment changed)');
           await sendAssignmentEmail(assignedTo);
         } else if (statusChanged) {
+          console.log('✉️ Sending status change email (status changed)');
           await sendStatusChangeEmail(status, previousStatus);
+        } else {
+          console.log('⚠️ No email sent (no assignment or status change)');
         }
 
         onSave();
@@ -405,7 +458,10 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         setPreviousAssignedTo(assignedTo);
 
         if (assignedTo && assignedTo !== 'Everyone') {
+          console.log('✉️ Sending assignment email (new request)');
           await sendAssignmentEmail(assignedTo);
+        } else {
+          console.log('⚠️ No email sent (no specific assignment or assigned to Everyone)');
         }
 
         onSave(docRef.id);
