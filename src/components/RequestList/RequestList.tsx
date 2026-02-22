@@ -296,7 +296,7 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
               className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition font-medium"
             >
               <Calendar className="w-5 h-5" />
-              Calendar
+              Req Calendar
             </button>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
