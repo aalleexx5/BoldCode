@@ -93,3 +93,15 @@ export type ActivityLog = {
   created_at: string;
   user?: Profile;
 };
+
+export type SMCalendarNote = {
+  id: string;
+  note_number: string;
+  title: string;
+  content: string;
+  date: string;
+  created_by: string;
+  created_by_name: string;
+  created_at: string;
+  updated_at: string;
+};
