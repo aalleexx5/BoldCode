@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { db, CostTracker, Profile } from '../../lib/firebase';
-import { collection, query, where, getDocs, addDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, deleteDoc, doc } from 'firebase/firestore';
 import { Clock, Plus, Trash2 } from 'lucide-react';
 
 interface CostTrackerSectionProps {
@@ -44,19 +44,14 @@ export const CostTrackerSection: React.FC<CostTrackerSectionProps> = ({ requestI
 
   const loadCostTrackers = async () => {
     try {
-      const q = query(
-        collection(db, 'cost_trackers'),
-        where('request_id', '==', requestId)
+      const querySnapshot = await getDocs(
+        collection(db, 'requests', requestId, 'cost_tracker')
       );
-      const querySnapshot = await getDocs(q);
 
-      const entriesList = querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data
-        } as CostTrackerEntry;
-      });
+      const entriesList = querySnapshot.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+      } as CostTrackerEntry));
 
       entriesList.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       setEntries(entriesList);
@@ -87,7 +82,7 @@ export const CostTrackerSection: React.FC<CostTrackerSectionProps> = ({ requestI
     try {
       const selectedUser = users.find(u => u.id === newEntry.user_id);
 
-      await addDoc(collection(db, 'cost_trackers'), {
+      await addDoc(collection(db, 'requests', requestId, 'cost_tracker'), {
         request_id: requestId,
         user_id: newEntry.user_id,
         user_name: selectedUser?.full_name || selectedUser?.email || 'Unknown',
@@ -121,7 +116,7 @@ export const CostTrackerSection: React.FC<CostTrackerSectionProps> = ({ requestI
     }
 
     try {
-      await deleteDoc(doc(db, 'cost_trackers', entryId));
+      await deleteDoc(doc(db, 'requests', requestId, 'cost_tracker', entryId));
       await loadCostTrackers();
       alert('Entry deleted successfully');
     } catch (error) {

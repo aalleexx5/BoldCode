@@ -112,18 +112,17 @@ export const ClientReports: React.FC<ClientReportsProps> = ({ onBack, onSelectRe
   const loadReport = async () => {
     setLoading(true);
     try {
-      const costTrackersSnapshot = await getDocs(collection(db, 'cost_trackers'));
       const requestsSnapshot = await getDocs(collection(db, 'requests'));
       const clientsSnapshot = await getDocs(collection(db, 'clients'));
 
       const requests = new Map<string, Request>();
-      requestsSnapshot.docs.forEach(doc => {
-        requests.set(doc.id, { id: doc.id, ...doc.data() } as Request);
+      requestsSnapshot.docs.forEach(d => {
+        requests.set(d.id, { id: d.id, ...d.data() } as Request);
       });
 
       const clientsMap = new Map<string, Client>();
-      clientsSnapshot.docs.forEach(doc => {
-        clientsMap.set(doc.id, { id: doc.id, ...doc.data() } as Client);
+      clientsSnapshot.docs.forEach(d => {
+        clientsMap.set(d.id, { id: d.id, ...d.data() } as Client);
       });
 
       const startDate = new Date(dateRange.start);
@@ -133,12 +132,23 @@ export const ClientReports: React.FC<ClientReportsProps> = ({ onBack, onSelectRe
 
       const entries: ReportEntry[] = [];
 
-      costTrackersSnapshot.docs.forEach(doc => {
-        const tracker = doc.data() as CostTracker;
+      const costTrackerPromises = requestsSnapshot.docs.map(async (reqDoc) => {
+        const costSnapshot = await getDocs(
+          collection(db, 'requests', reqDoc.id, 'cost_tracker')
+        );
+        return costSnapshot.docs.map(d => ({
+          requestId: reqDoc.id,
+          ...d.data() as CostTracker
+        }));
+      });
+
+      const allCostTrackers = (await Promise.all(costTrackerPromises)).flat();
+
+      allCostTrackers.forEach(tracker => {
         const trackerDate = new Date(tracker.date);
 
         if (trackerDate >= startDate && trackerDate <= endDate) {
-          const request = requests.get(tracker.request_id);
+          const request = requests.get(tracker.requestId);
 
           if (request) {
             const client = request.client_id ? clientsMap.get(request.client_id) : null;
@@ -146,7 +156,7 @@ export const ClientReports: React.FC<ClientReportsProps> = ({ onBack, onSelectRe
 
             if (selectedClient === 'all' || request.client_id === selectedClient) {
               entries.push({
-                requestId: tracker.request_id,
+                requestId: tracker.requestId,
                 requestNumber: request.request_number,
                 client: clientName,
                 teamMember: tracker.user_name,
