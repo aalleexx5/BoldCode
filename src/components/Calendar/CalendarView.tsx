@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, ArrowLeft, Pin } from 'lucide-react';
 interface CalendarViewProps {
   onSelectRequest: (requestId: string) => void;
   onBack: () => void;
+  onNavigateToSMCalendar: () => void;
   selectedFilters: string[];
   onFiltersChange: (filters: string[]) => void;
 }
@@ -24,7 +25,7 @@ const STATUS_OPTIONS = [
   { value: 'canceled', label: 'Canceled' },
 ];
 
-export const CalendarView: React.FC<CalendarViewProps> = ({ onSelectRequest, onBack, selectedFilters, onFiltersChange }) => {
+export const CalendarView: React.FC<CalendarViewProps> = ({ onSelectRequest, onBack, onNavigateToSMCalendar, selectedFilters, onFiltersChange }) => {
   const { user } = useAuth();
   const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
@@ -193,13 +194,21 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onSelectRequest, onB
       <div className="bg-white border-b border-slate-200 px-6 py-4">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold text-slate-800">Calendar by Due Dates</h2>
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition font-medium"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Back to List
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onNavigateToSMCalendar}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+            >
+              SM Calendar
+            </button>
+            <button
+              onClick={onBack}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition font-medium"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              Back to List
+            </button>
+          </div>
         </div>
 
         <div className="flex items-center gap-4 mb-4">
