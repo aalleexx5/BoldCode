@@ -668,6 +668,8 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
                   />
                 </div>
 
+                {requestId && <NoteShortcuts requestId={requestId} />}
+
                 <LinksSection
                   requestId={requestId}
                   links={pendingLinks}
@@ -676,8 +678,6 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
                     setHasChanges(true);
                   }}
                 />
-
-                {requestId && <NoteShortcuts requestId={requestId} />}
               </div>
 
               <div className="space-y-6">
