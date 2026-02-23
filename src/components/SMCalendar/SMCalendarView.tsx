@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Plus, ArrowLeft } from 'lucide-react';
+import { Plus, ArrowLeft } from 'lucide-react';
 import { db, SMCalendarNote } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { collection, addDoc, updateDoc, deleteDoc, doc, query, onSnapshot, orderBy } from 'firebase/firestore';
@@ -12,12 +12,24 @@ interface SMCalendarViewProps {
 
 export const SMCalendarView: React.FC<SMCalendarViewProps> = ({ onBack }) => {
   const { profile } = useAuth();
-  const [currentDate, setCurrentDate] = useState(new Date());
   const [notes, setNotes] = useState<SMCalendarNote[]>([]);
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [selectedNote, setSelectedNote] = useState<SMCalendarNote | undefined>();
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [visibleMonths, setVisibleMonths] = useState<Date[]>([]);
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const today = new Date();
+    const months: Date[] = [];
+
+    for (let i = -3; i <= 3; i++) {
+      months.push(new Date(today.getFullYear(), today.getMonth() + i, 1));
+    }
+
+    setVisibleMonths(months);
+  }, []);
 
   useEffect(() => {
     const notesQuery = query(
@@ -37,9 +49,9 @@ export const SMCalendarView: React.FC<SMCalendarViewProps> = ({ onBack }) => {
     return () => unsubscribe();
   }, []);
 
-  const getMonthData = () => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
+  const getMonthData = (monthDate: Date) => {
+    const year = monthDate.getFullYear();
+    const month = monthDate.getMonth();
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
@@ -192,12 +204,55 @@ export const SMCalendarView: React.FC<SMCalendarViewProps> = ({ onBack }) => {
     }
   };
 
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + (direction === 'next' ? 1 : -1), 1));
+  const loadMoreMonths = (direction: 'before' | 'after') => {
+    setVisibleMonths((prev) => {
+      if (direction === 'before') {
+        const firstMonth = prev[0];
+        const newMonths: Date[] = [];
+        for (let i = 3; i >= 1; i--) {
+          newMonths.push(
+            new Date(firstMonth.getFullYear(), firstMonth.getMonth() - i, 1)
+          );
+        }
+        return [...newMonths, ...prev];
+      } else {
+        const lastMonth = prev[prev.length - 1];
+        const newMonths: Date[] = [];
+        for (let i = 1; i <= 3; i++) {
+          newMonths.push(
+            new Date(lastMonth.getFullYear(), lastMonth.getMonth() + i, 1)
+          );
+        }
+        return [...prev, ...newMonths];
+      }
+    });
+  };
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+
+    if (scrollTop < 200) {
+      loadMoreMonths('before');
+      e.currentTarget.scrollTop = scrollTop + 600;
+    }
+
+    if (scrollHeight - scrollTop - clientHeight < 200) {
+      loadMoreMonths('after');
+    }
   };
 
   const goToToday = () => {
-    setCurrentDate(new Date());
+    const today = new Date();
+    const todayMonthIndex = visibleMonths.findIndex(
+      (m) => m.getMonth() === today.getMonth() && m.getFullYear() === today.getFullYear()
+    );
+
+    if (todayMonthIndex !== -1 && scrollContainerRef.current) {
+      const monthElements = scrollContainerRef.current.querySelectorAll('[data-month]');
+      if (monthElements[todayMonthIndex]) {
+        monthElements[todayMonthIndex].scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
   };
 
   const isToday = (date: Date | null) => {
@@ -212,7 +267,6 @@ export const SMCalendarView: React.FC<SMCalendarViewProps> = ({ onBack }) => {
   ];
 
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const weeks = getMonthData();
 
   if (loading) {
     return (
@@ -225,7 +279,7 @@ export const SMCalendarView: React.FC<SMCalendarViewProps> = ({ onBack }) => {
   return (
     <div className="flex-1 flex flex-col bg-slate-50">
       <div className="bg-white border-b border-slate-200 px-6 py-4">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
               onClick={onBack}
@@ -239,91 +293,102 @@ export const SMCalendarView: React.FC<SMCalendarViewProps> = ({ onBack }) => {
             onClick={goToToday}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
           >
-            Today
+            Jump to Today
           </button>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigateMonth('prev')}
-              className="p-2 hover:bg-slate-100 rounded-lg transition"
-            >
-              <ChevronLeft className="w-5 h-5 text-slate-600" />
-            </button>
-            <h3 className="text-xl font-semibold text-slate-800 min-w-[200px] text-center">
-              {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-            </h3>
-            <button
-              onClick={() => navigateMonth('next')}
-              className="p-2 hover:bg-slate-100 rounded-lg transition"
-            >
-              <ChevronRight className="w-5 h-5 text-slate-600" />
-            </button>
-          </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto p-6">
-        <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-          <div className="grid grid-cols-7 bg-slate-50 border-b border-slate-200">
-            {weekDays.map((day) => (
-              <div
-                key={day}
-                className="px-4 py-3 text-center text-sm font-semibold text-slate-600 border-r border-slate-200 last:border-r-0"
-              >
-                {day}
-              </div>
-            ))}
-          </div>
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-auto p-6"
+        onScroll={handleScroll}
+      >
+        <div className="space-y-8 max-w-7xl mx-auto">
+          {visibleMonths.map((monthDate, monthIndex) => {
+            const weeks = getMonthData(monthDate);
+            const isCurrentMonth =
+              monthDate.getMonth() === new Date().getMonth() &&
+              monthDate.getFullYear() === new Date().getFullYear();
 
-          <div className="divide-y divide-slate-200">
-            {weeks.map((week, weekIndex) => (
-              <div key={weekIndex} className="grid grid-cols-7 divide-x divide-slate-200">
-                {week.map((date, dayIndex) => {
-                  const dayNotes = getNotesForDate(date);
-                  return (
+            return (
+              <div
+                key={`${monthDate.getFullYear()}-${monthDate.getMonth()}`}
+                data-month={monthIndex}
+                className={`bg-white rounded-lg shadow-sm border-2 ${
+                  isCurrentMonth ? 'border-blue-400' : 'border-slate-200'
+                } overflow-hidden`}
+              >
+                <div className={`px-6 py-4 ${
+                  isCurrentMonth ? 'bg-blue-50 border-b-2 border-blue-200' : 'bg-slate-50 border-b border-slate-200'
+                }`}>
+                  <h3 className={`text-xl font-semibold ${
+                    isCurrentMonth ? 'text-blue-900' : 'text-slate-800'
+                  }`}>
+                    {monthNames[monthDate.getMonth()]} {monthDate.getFullYear()}
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-7 bg-slate-50 border-b border-slate-200">
+                  {weekDays.map((day) => (
                     <div
-                      key={dayIndex}
-                      className={`min-h-[120px] p-3 ${
-                        date ? 'bg-white hover:bg-slate-50' : 'bg-slate-50'
-                      } ${isToday(date) ? 'bg-blue-50 hover:bg-blue-100' : ''}`}
-                      onDragOver={date ? handleDragOver : undefined}
-                      onDrop={date ? (e) => handleDrop(e, date) : undefined}
+                      key={day}
+                      className="px-4 py-3 text-center text-sm font-semibold text-slate-600 border-r border-slate-200 last:border-r-0"
                     >
-                      {date && (
-                        <>
-                          <div className="flex items-center justify-between mb-2">
-                            <span
-                              className={`text-sm font-medium ${
-                                isToday(date)
-                                  ? 'bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center'
-                                  : 'text-slate-700'
-                              }`}
-                            >
-                              {date.getDate()}
-                            </span>
-                            <button
-                              onClick={() => handleAddNote(date)}
-                              className="p-1 hover:bg-blue-100 rounded transition opacity-60 hover:opacity-100"
-                            >
-                              <Plus className="w-4 h-4 text-blue-600" />
-                            </button>
-                          </div>
-                          <NotesList
-                            notes={dayNotes}
-                            onEditNote={handleEditNote}
-                            onDragStart={handleDragStart}
-                            onDuplicateNote={handleDuplicateNote}
-                          />
-                        </>
-                      )}
+                      {day}
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
+
+                <div className="divide-y divide-slate-200">
+                  {weeks.map((week, weekIndex) => (
+                    <div key={weekIndex} className="grid grid-cols-7 divide-x divide-slate-200">
+                      {week.map((date, dayIndex) => {
+                        const dayNotes = getNotesForDate(date);
+                        return (
+                          <div
+                            key={dayIndex}
+                            className={`min-h-[120px] p-3 ${
+                              date ? 'bg-white hover:bg-slate-50' : 'bg-slate-50'
+                            } ${isToday(date) ? 'bg-blue-50 hover:bg-blue-100' : ''}`}
+                            onDragOver={date ? handleDragOver : undefined}
+                            onDrop={date ? (e) => handleDrop(e, date) : undefined}
+                          >
+                            {date && (
+                              <>
+                                <div className="flex items-center justify-between mb-2">
+                                  <span
+                                    className={`text-sm font-medium ${
+                                      isToday(date)
+                                        ? 'bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center'
+                                        : 'text-slate-700'
+                                    }`}
+                                  >
+                                    {date.getDate()}
+                                  </span>
+                                  <button
+                                    onClick={() => handleAddNote(date)}
+                                    className="p-1 hover:bg-blue-100 rounded transition opacity-60 hover:opacity-100"
+                                  >
+                                    <Plus className="w-4 h-4 text-blue-600" />
+                                  </button>
+                                </div>
+                                <NotesList
+                                  notes={dayNotes}
+                                  onEditNote={handleEditNote}
+                                  onDragStart={handleDragStart}
+                                  onDuplicateNote={handleDuplicateNote}
+                                />
+                              </>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
       </div>
 
