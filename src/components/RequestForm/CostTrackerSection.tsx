@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { db, CostTracker, Profile } from '../../lib/firebase';
 import { collection, query, where, getDocs, addDoc, deleteDoc, doc } from 'firebase/firestore';
 import { Clock, Plus, Trash2 } from 'lucide-react';
-import { useProfiles } from '../../hooks/useProfiles';
 
 interface CostTrackerSectionProps {
   requestId: string;
@@ -14,8 +13,8 @@ interface CostTrackerEntry extends CostTracker {
 }
 
 export const CostTrackerSection: React.FC<CostTrackerSectionProps> = ({ requestId }) => {
-  const { profiles: users } = useProfiles();
   const [entries, setEntries] = useState<CostTrackerEntry[]>([]);
+  const [users, setUsers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [newEntry, setNewEntry] = useState({
@@ -26,8 +25,22 @@ export const CostTrackerSection: React.FC<CostTrackerSectionProps> = ({ requestI
   });
 
   useEffect(() => {
+    loadUsers();
     loadCostTrackers();
   }, [requestId]);
+
+  const loadUsers = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, 'profiles'));
+      const usersList = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as Profile));
+      setUsers(usersList);
+    } catch (error) {
+      console.error('Error loading users:', error);
+    }
+  };
 
   const loadCostTrackers = async () => {
     try {

@@ -1,9 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { db, Request, CostTracker, Profile, Client } from '../../lib/firebase';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { ArrowLeft, FileText, ArrowUpDown, Printer, Building2 } from 'lucide-react';
-import { useProfiles } from '../../hooks/useProfiles';
-import { useClients } from '../../hooks/useClients';
 
 interface ReportsViewProps {
   onBack: () => void;
@@ -41,9 +39,6 @@ const getDefaultDateRange = () => {
 };
 
 export const ReportsView: React.FC<ReportsViewProps> = ({ onBack, onSelectRequest, onSwitchToClientReports }) => {
-  const { profiles } = useProfiles();
-  const { clients } = useClients();
-
   const [reportData, setReportData] = useState<ReportEntry[]>([]);
   const [sortedData, setSortedData] = useState<ReportEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -54,32 +49,40 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ onBack, onSelectReques
   });
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [selectedMember, setSelectedMember] = useState<string>('all');
 
-  const teamMembers = useMemo(() => {
-    return profiles
-      .map(profile => ({
-        id: profile.id,
-        name: profile.full_name || profile.email
-      }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [profiles]);
-
-  const clientsMap = useMemo(() => {
-    const map = new Map<string, Client>();
-    clients.forEach(client => map.set(client.id, client));
-    return map;
-  }, [clients]);
+  useEffect(() => {
+    loadTeamMembers();
+  }, []);
 
   useEffect(() => {
-    if (profiles.length > 0 || clients.length > 0) {
-      loadReport();
-    }
-  }, [dateRange, selectedMember, profiles, clients]);
+    loadReport();
+  }, [dateRange, selectedMember]);
 
   useEffect(() => {
     applySorting();
   }, [reportData, sortField, sortDirection]);
+
+  const loadTeamMembers = async () => {
+    try {
+      const profilesSnapshot = await getDocs(collection(db, 'profiles'));
+      const members: TeamMember[] = [];
+
+      profilesSnapshot.docs.forEach(doc => {
+        const profile = doc.data() as Profile;
+        members.push({
+          id: doc.id,
+          name: profile.full_name || profile.email
+        });
+      });
+
+      members.sort((a, b) => a.name.localeCompare(b.name));
+      setTeamMembers(members);
+    } catch (error) {
+      console.error('Error loading team members:', error);
+    }
+  };
 
   const applySorting = () => {
     const sorted = [...reportData].sort((a, b) => {
@@ -111,10 +114,16 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ onBack, onSelectReques
     try {
       const costTrackersSnapshot = await getDocs(collection(db, 'cost_trackers'));
       const requestsSnapshot = await getDocs(collection(db, 'requests'));
+      const clientsSnapshot = await getDocs(collection(db, 'clients'));
 
       const requests = new Map<string, Request>();
       requestsSnapshot.docs.forEach(doc => {
         requests.set(doc.id, { id: doc.id, ...doc.data() } as Request);
+      });
+
+      const clients = new Map<string, Client>();
+      clientsSnapshot.docs.forEach(doc => {
+        clients.set(doc.id, { id: doc.id, ...doc.data() } as Client);
       });
 
       const startDate = new Date(dateRange.start);
@@ -133,7 +142,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ onBack, onSelectReques
             const request = requests.get(tracker.request_id);
 
             if (request) {
-              const client = request.client_id ? clientsMap.get(request.client_id) : null;
+              const client = request.client_id ? clients.get(request.client_id) : null;
 
               entries.push({
                 requestId: tracker.request_id,
