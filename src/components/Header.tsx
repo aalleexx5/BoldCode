@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { ChevronDown, LogOut, User, Calendar } from 'lucide-react';
+import { ChevronDown, LogOut, User } from 'lucide-react';
 
 interface HeaderProps {
   currentPage: 'requests' | 'clients' | 'calendar' | 'sm-calendar' | 'reports';
@@ -55,16 +55,6 @@ export const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onOpenP
                 >
                   <User className="w-4 h-4" />
                   Profile
-                </button>
-                <button
-                  onClick={() => {
-                    setShowDropdown(false);
-                    onNavigate('sm-calendar');
-                  }}
-                  className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3"
-                >
-                  <Calendar className="w-4 h-4" />
-                  SM Calendar
                 </button>
                 <hr className="my-2 border-slate-200" />
                 <button
