@@ -10,6 +10,7 @@ import { ClientList } from './components/Clients/ClientList';
 import { ClientDetail } from './components/Clients/ClientDetail';
 import { NewClientModal } from './components/Clients/NewClientModal';
 import { CalendarView } from './components/Calendar/CalendarView';
+import { SMCalendarView } from './components/SMCalendar/SMCalendarView';
 import { ReportTypeSelector } from './components/Reports/ReportTypeSelector';
 import { ReportsView } from './components/Reports/ReportsView';
 import { ClientReports } from './components/Reports/ClientReports';
@@ -18,7 +19,7 @@ import emailjs from '@emailjs/browser';
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  const [currentPage, setCurrentPage] = useState<'requests' | 'clients' | 'calendar' | 'reports'>('requests');
+  const [currentPage, setCurrentPage] = useState<'requests' | 'clients' | 'calendar' | 'smcalendar' | 'reports'>('requests');
   const [selectedRequestId, setSelectedRequestId] = useState<string | undefined>();
   const [calendarFilters, setCalendarFilters] = useState<string[]>([]);
   const [showNewRequest, setShowNewRequest] = useState(false);
@@ -95,9 +96,14 @@ const AppContent: React.FC = () => {
               setCurrentPage('calendar');
             }}
             onNavigateToReports={() => setCurrentPage('reports')}
+            onNavigateToSMCalendar={() => setCurrentPage('smcalendar')}
             refreshTrigger={refreshTrigger}
           />
         )
+      ) : currentPage === 'smcalendar' ? (
+        <SMCalendarView
+          onBack={() => setCurrentPage('requests')}
+        />
       ) : currentPage === 'reports' ? (
         selectedRequestId ? (
           <RequestForm

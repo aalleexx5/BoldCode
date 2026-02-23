@@ -3,8 +3,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { ChevronDown, LogOut, User } from 'lucide-react';
 
 interface HeaderProps {
-  currentPage: 'requests' | 'clients' | 'calendar' | 'reports';
-  onNavigate: (page: 'requests' | 'clients' | 'calendar' | 'reports') => void;
+  currentPage: 'requests' | 'clients' | 'calendar' | 'smcalendar' | 'reports';
+  onNavigate: (page: 'requests' | 'clients' | 'calendar' | 'smcalendar' | 'reports') => void;
   onOpenProfile: () => void;
 }
 
