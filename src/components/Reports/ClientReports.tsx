@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { db, Request, CostTracker, Client } from '../../lib/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import { ArrowLeft, Building2, ArrowUpDown, Printer, FileText } from 'lucide-react';
-import { useClients } from '../../hooks/useClients';
 
 interface ClientReportsProps {
   onBack: () => void;
@@ -40,8 +39,6 @@ const getDefaultDateRange = () => {
 };
 
 export const ClientReports: React.FC<ClientReportsProps> = ({ onBack, onSelectRequest, onSwitchToTeamReports }) => {
-  const { clients: clientsList } = useClients();
-
   const [reportData, setReportData] = useState<ReportEntry[]>([]);
   const [sortedData, setSortedData] = useState<ReportEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -52,32 +49,40 @@ export const ClientReports: React.FC<ClientReportsProps> = ({ onBack, onSelectRe
   });
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [clients, setClients] = useState<ClientOption[]>([]);
   const [selectedClient, setSelectedClient] = useState<string>('all');
 
-  const clients = useMemo(() => {
-    return clientsList
-      .map(client => ({
-        id: client.id,
-        name: client.company
-      }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [clientsList]);
-
-  const clientsMap = useMemo(() => {
-    const map = new Map<string, Client>();
-    clientsList.forEach(client => map.set(client.id, client));
-    return map;
-  }, [clientsList]);
+  useEffect(() => {
+    loadClients();
+  }, []);
 
   useEffect(() => {
-    if (clientsList.length > 0) {
-      loadReport();
-    }
-  }, [dateRange, selectedClient, clientsList]);
+    loadReport();
+  }, [dateRange, selectedClient]);
 
   useEffect(() => {
     applySorting();
   }, [reportData, sortField, sortDirection]);
+
+  const loadClients = async () => {
+    try {
+      const clientsSnapshot = await getDocs(collection(db, 'clients'));
+      const clientList: ClientOption[] = [];
+
+      clientsSnapshot.docs.forEach(doc => {
+        const client = doc.data() as Client;
+        clientList.push({
+          id: doc.id,
+          name: client.company
+        });
+      });
+
+      clientList.sort((a, b) => a.name.localeCompare(b.name));
+      setClients(clientList);
+    } catch (error) {
+      console.error('Error loading clients:', error);
+    }
+  };
 
   const applySorting = () => {
     const sorted = [...reportData].sort((a, b) => {
@@ -109,10 +114,16 @@ export const ClientReports: React.FC<ClientReportsProps> = ({ onBack, onSelectRe
     try {
       const costTrackersSnapshot = await getDocs(collection(db, 'cost_trackers'));
       const requestsSnapshot = await getDocs(collection(db, 'requests'));
+      const clientsSnapshot = await getDocs(collection(db, 'clients'));
 
       const requests = new Map<string, Request>();
       requestsSnapshot.docs.forEach(doc => {
         requests.set(doc.id, { id: doc.id, ...doc.data() } as Request);
+      });
+
+      const clientsMap = new Map<string, Client>();
+      clientsSnapshot.docs.forEach(doc => {
+        clientsMap.set(doc.id, { id: doc.id, ...doc.data() } as Client);
       });
 
       const startDate = new Date(dateRange.start);

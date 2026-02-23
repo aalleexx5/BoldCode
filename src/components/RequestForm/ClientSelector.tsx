@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { db, Client, RequestLink } from '../../lib/firebase';
 import { collection, query, orderBy, getDocs, addDoc, getDoc, doc } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
 import { Plus, X, ExternalLink, Copy } from 'lucide-react';
 import { formatPhoneNumber, validatePhoneNumber } from '../../utils/phoneFormatter';
-import { useClients } from '../../hooks/useClients';
 
 interface ClientSelectorProps {
   selectedClientId: string;
@@ -13,7 +12,7 @@ interface ClientSelectorProps {
 
 export const ClientSelector: React.FC<ClientSelectorProps> = ({ selectedClientId, onChange }) => {
   const { user } = useAuth();
-  const { clients, refreshClients } = useClients();
+  const [clients, setClients] = useState<Client[]>([]);
   const [showNewClientForm, setShowNewClientForm] = useState(false);
   const [showClientPopup, setShowClientPopup] = useState(false);
   const [popupClient, setPopupClient] = useState<Client | null>(null);
@@ -28,12 +27,6 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({ selectedClientId
     notes: '',
   });
 
-  const sortedClients = useMemo(() => {
-    return [...clients].sort((a, b) =>
-      (a.company || '').localeCompare(b.company || '')
-    );
-  }, [clients]);
-
   const handlePhoneChange = (value: string) => {
     const formatted = formatPhoneNumber(value);
     setNewClient({ ...newClient, phone: formatted });
@@ -43,6 +36,24 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({ selectedClientId
       setPhoneError(validation.error || '');
     } else {
       setPhoneError('');
+    }
+  };
+
+  useEffect(() => {
+    loadClients();
+  }, []);
+
+  const loadClients = async () => {
+    try {
+      const q = query(collection(db, 'clients'), orderBy('company'));
+      const querySnapshot = await getDocs(q);
+      const clientsData: Client[] = [];
+      querySnapshot.forEach((doc) => {
+        clientsData.push({ id: doc.id, ...doc.data() } as Client);
+      });
+      setClients(clientsData);
+    } catch (error) {
+      console.error('Error loading clients:', error);
     }
   };
 
@@ -78,10 +89,19 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({ selectedClientId
         updated_at: new Date().toISOString(),
       });
 
-      refreshClients();
+      const newClientData = {
+        id: docRef.id,
+        ...newClient,
+        links: [],
+        created_by: user!.uid,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      setClients([...clients, newClientData]);
       onChange(docRef.id);
       setShowNewClientForm(false);
-      setNewClient({ company: '', contact_name: '', email: '', phone: '', address: '', website: '', notes: '' });
+      setNewClient({ company: '', contact_name: '', email: '', phone: '', notes: '' });
     } catch (error) {
       console.error('Error adding client:', error);
       alert('Failed to add client. Please try again.');
@@ -103,7 +123,7 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({ selectedClientId
             className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="">No client selected</option>
-            {sortedClients.map((client) => (
+            {clients.map((client) => (
               <option key={client.id} value={client.id}>
                 {client.company} {client.contact_name && `- ${client.contact_name}`}
               </option>
