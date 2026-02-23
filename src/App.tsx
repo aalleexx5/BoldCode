@@ -158,7 +158,6 @@ const AppContent: React.FC = () => {
           <CalendarView
             onSelectRequest={setSelectedRequestId}
             onBack={() => setCurrentPage('requests')}
-            onNavigateToSMCalendar={() => setCurrentPage('sm-calendar')}
             selectedFilters={calendarFilters}
             onFiltersChange={setCalendarFilters}
           />
@@ -166,7 +165,6 @@ const AppContent: React.FC = () => {
       ) : currentPage === 'sm-calendar' ? (
         <SMCalendarView
           onBack={() => setCurrentPage('requests')}
-          onNavigateToReqCalendar={() => setCurrentPage('calendar')}
         />
       ) : selectedClientId ? (
         <ClientDetail
