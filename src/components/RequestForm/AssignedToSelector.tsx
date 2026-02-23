@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { db, Profile } from '../../lib/firebase';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import React, { useMemo } from 'react';
 import { Users } from 'lucide-react';
+import { useProfiles } from '../../hooks/useProfiles';
 
 interface AssignedToSelectorProps {
   selectedValue: string;
@@ -9,30 +8,13 @@ interface AssignedToSelectorProps {
 }
 
 export const AssignedToSelector: React.FC<AssignedToSelectorProps> = ({ selectedValue, onChange }) => {
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { profiles, loading } = useProfiles();
 
-  useEffect(() => {
-    loadProfiles();
-  }, []);
-
-  const loadProfiles = async () => {
-    try {
-      const q = query(collection(db, 'profiles'), orderBy('full_name', 'asc'));
-      const querySnapshot = await getDocs(q);
-      const profilesData: Profile[] = [];
-
-      querySnapshot.forEach((doc) => {
-        profilesData.push({ id: doc.id, ...doc.data() } as Profile);
-      });
-
-      setProfiles(profilesData);
-    } catch (error) {
-      console.error('Error loading profiles:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const sortedProfiles = useMemo(() => {
+    return [...profiles].sort((a, b) =>
+      (a.full_name || '').localeCompare(b.full_name || '')
+    );
+  }, [profiles]);
 
   return (
     <div>
@@ -48,7 +30,7 @@ export const AssignedToSelector: React.FC<AssignedToSelectorProps> = ({ selected
       >
         <option value="">Select assignee...</option>
         <option value="Everyone">Everyone</option>
-        {profiles.map((profile) => (
+        {sortedProfiles.map((profile) => (
           <option key={profile.id} value={profile.id}>
             {profile.full_name}
           </option>
