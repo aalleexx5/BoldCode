@@ -100,6 +100,8 @@ export type SMCalendarNote = {
   title: string;
   content: string;
   date: string;
+  emoji: string;
+  color: string;
   created_by: string;
   created_by_name: string;
   created_at: string;

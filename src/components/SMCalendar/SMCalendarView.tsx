@@ -102,6 +102,8 @@ export const SMCalendarView: React.FC<SMCalendarViewProps> = ({ onBack }) => {
         await updateDoc(noteRef, {
           title: noteData.title,
           content: noteData.content,
+          emoji: noteData.emoji,
+          color: noteData.color,
           updated_at: new Date().toISOString(),
         });
       } else {
@@ -110,6 +112,8 @@ export const SMCalendarView: React.FC<SMCalendarViewProps> = ({ onBack }) => {
           title: noteData.title,
           content: noteData.content,
           date: noteData.date,
+          emoji: noteData.emoji || '📝',
+          color: noteData.color || '#3b82f6',
           created_by: profile.id,
           created_by_name: profile.full_name,
           created_at: new Date().toISOString(),

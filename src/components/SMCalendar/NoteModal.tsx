@@ -21,7 +21,23 @@ export const NoteModal: React.FC<NoteModalProps> = ({
 }) => {
   const [title, setTitle] = useState(note?.title || '');
   const [content, setContent] = useState(note?.content || '');
+  const [emoji, setEmoji] = useState(note?.emoji || '📝');
+  const [color, setColor] = useState(note?.color || '#3b82f6');
   const [isSaving, setIsSaving] = useState(false);
+
+  const emojiOptions = ['📝', '💼', '📱', '💻', '📊', '📈', '🎨', '🎯', '⭐', '🔔', '📅', '✅', '🚀', '💡', '📞', '✉️', '🎉', '⚡', '🔥', '💰'];
+  const colorOptions = [
+    { name: 'Blue', value: '#3b82f6' },
+    { name: 'Red', value: '#ef4444' },
+    { name: 'Green', value: '#22c55e' },
+    { name: 'Yellow', value: '#eab308' },
+    { name: 'Purple', value: '#a855f7' },
+    { name: 'Pink', value: '#ec4899' },
+    { name: 'Orange', value: '#f97316' },
+    { name: 'Teal', value: '#14b8a6' },
+    { name: 'Indigo', value: '#6366f1' },
+    { name: 'Gray', value: '#6b7280' },
+  ];
 
   const modules = {
     toolbar: [
@@ -47,6 +63,8 @@ export const NoteModal: React.FC<NoteModalProps> = ({
         title: title.trim(),
         content,
         date,
+        emoji,
+        color,
       });
       onClose();
     } catch (error) {
@@ -97,6 +115,56 @@ export const NoteModal: React.FC<NoteModalProps> = ({
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Icon
+              </label>
+              <div className="grid grid-cols-5 gap-2">
+                {emojiOptions.map((emojiOption) => (
+                  <button
+                    key={emojiOption}
+                    type="button"
+                    onClick={() => setEmoji(emojiOption)}
+                    className={`p-2 text-2xl rounded-lg border-2 transition ${
+                      emoji === emojiOption
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    {emojiOption}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Color
+              </label>
+              <div className="grid grid-cols-5 gap-2">
+                {colorOptions.map((colorOption) => (
+                  <button
+                    key={colorOption.value}
+                    type="button"
+                    onClick={() => setColor(colorOption.value)}
+                    className={`p-2 rounded-lg border-2 transition ${
+                      color === colorOption.value
+                        ? 'border-slate-800'
+                        : 'border-slate-200 hover:border-slate-300'
+                    }`}
+                    style={{ backgroundColor: colorOption.value }}
+                    title={colorOption.name}
+                  >
+                    {color === colorOption.value && (
+                      <span className="text-white text-lg">✓</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
               Title
