@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, Trash2 } from 'lucide-react';
-import { SMCalendarNote } from '../../lib/firebase';
+import { SMCalendarNote, Request } from '../../lib/firebase';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
@@ -23,7 +25,26 @@ export const NoteModal: React.FC<NoteModalProps> = ({
   const [content, setContent] = useState(note?.content || '');
   const [emoji, setEmoji] = useState(note?.emoji || '📝');
   const [color, setColor] = useState(note?.color || '#3b82f6');
+  const [requestId, setRequestId] = useState(note?.request_id || '');
   const [isSaving, setIsSaving] = useState(false);
+  const [requests, setRequests] = useState<Request[]>([]);
+
+  useEffect(() => {
+    const requestsQuery = query(
+      collection(db, 'requests'),
+      where('status', 'not-in', ['canceled', 'completed'])
+    );
+
+    const unsubscribe = onSnapshot(requestsQuery, (snapshot) => {
+      const requestsData: Request[] = [];
+      snapshot.forEach((doc) => {
+        requestsData.push({ id: doc.id, ...doc.data() } as Request);
+      });
+      setRequests(requestsData.sort((a, b) => a.request_number.localeCompare(b.request_number)));
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const emojiOptions = ['📝', '💼', '📱', '💻', '📊', '📈', '🎨', '🎯', '⭐', '🔔', '📅', '✅', '🚀', '💡', '📞', '✉️', '🎉', '⚡', '🔥', '💰'];
   const colorOptions = [
@@ -65,6 +86,7 @@ export const NoteModal: React.FC<NoteModalProps> = ({
         date,
         emoji,
         color,
+        request_id: requestId || undefined,
       });
       onClose();
     } catch (error) {
@@ -193,6 +215,24 @@ export const NoteModal: React.FC<NoteModalProps> = ({
                 className="bg-white"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Assign to Request (Optional)
+            </label>
+            <select
+              value={requestId}
+              onChange={(e) => setRequestId(e.target.value)}
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">None</option>
+              {requests.map((request) => (
+                <option key={request.id} value={request.id}>
+                  #{request.request_number} - {request.title}
+                </option>
+              ))}
+            </select>
           </div>
 
           {note && (

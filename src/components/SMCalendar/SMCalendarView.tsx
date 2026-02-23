@@ -104,6 +104,7 @@ export const SMCalendarView: React.FC<SMCalendarViewProps> = ({ onBack }) => {
           content: noteData.content,
           emoji: noteData.emoji,
           color: noteData.color,
+          request_id: noteData.request_id || null,
           updated_at: new Date().toISOString(),
         });
       } else {
@@ -114,6 +115,7 @@ export const SMCalendarView: React.FC<SMCalendarViewProps> = ({ onBack }) => {
           date: noteData.date,
           emoji: noteData.emoji || '📝',
           color: noteData.color || '#3b82f6',
+          request_id: noteData.request_id || null,
           created_by: profile.id,
           created_by_name: profile.full_name,
           created_at: new Date().toISOString(),
@@ -146,6 +148,7 @@ export const SMCalendarView: React.FC<SMCalendarViewProps> = ({ onBack }) => {
         date: note.date,
         emoji: note.emoji || '📝',
         color: note.color || '#3b82f6',
+        request_id: note.request_id || null,
         created_by: profile.id,
         created_by_name: profile.full_name,
         created_at: new Date().toISOString(),
