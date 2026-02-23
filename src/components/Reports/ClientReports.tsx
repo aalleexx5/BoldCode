@@ -70,8 +70,10 @@ export const ClientReports: React.FC<ClientReportsProps> = ({ onBack, onSelectRe
   }, [clientsList]);
 
   useEffect(() => {
-    loadReport();
-  }, [dateRange, selectedClient]);
+    if (clientsList.length > 0) {
+      loadReport();
+    }
+  }, [dateRange, selectedClient, clientsList]);
 
   useEffect(() => {
     applySorting();

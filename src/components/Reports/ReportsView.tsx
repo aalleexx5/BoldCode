@@ -72,8 +72,10 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ onBack, onSelectReques
   }, [clients]);
 
   useEffect(() => {
-    loadReport();
-  }, [dateRange, selectedMember]);
+    if (profiles.length > 0 || clients.length > 0) {
+      loadReport();
+    }
+  }, [dateRange, selectedMember, profiles, clients]);
 
   useEffect(() => {
     applySorting();

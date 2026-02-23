@@ -7,8 +7,8 @@ let clientsCacheTime: number = 0;
 const CACHE_DURATION = 5 * 60 * 1000;
 
 export function useClients() {
-  const [clients, setClients] = useState<Client[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [clients, setClients] = useState<Client[]>(clientsCache || []);
+  const [loading, setLoading] = useState(!clientsCache);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
@@ -22,6 +22,7 @@ export function useClients() {
           return;
         }
 
+        setLoading(true);
         const querySnapshot = await getDocs(collection(db, 'clients'));
         const clientsList = querySnapshot.docs.map(doc => ({
           id: doc.id,
@@ -34,6 +35,7 @@ export function useClients() {
         setClients(clientsList);
         setError(null);
       } catch (err) {
+        console.error('Error loading clients:', err);
         setError(err as Error);
       } finally {
         setLoading(false);
