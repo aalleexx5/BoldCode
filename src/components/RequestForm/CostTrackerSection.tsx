@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { db, CostTracker, Profile } from '../../lib/firebase';
 import { collection, query, where, getDocs, addDoc, deleteDoc, doc } from 'firebase/firestore';
 import { Clock, Plus, Trash2 } from 'lucide-react';
@@ -130,9 +130,9 @@ export const CostTrackerSection: React.FC<CostTrackerSectionProps> = ({ requestI
     }
   };
 
-  const getTotalHours = () => {
+  const totalHours = useMemo(() => {
     return entries.reduce((sum, entry) => sum + entry.time_spent, 0).toFixed(1);
-  };
+  }, [entries]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -151,7 +151,7 @@ export const CostTrackerSection: React.FC<CostTrackerSectionProps> = ({ requestI
           <h3 className="text-lg font-semibold text-slate-800">Cost Tracker</h3>
         </div>
         <div className="text-sm text-slate-600">
-          Total: <span className="font-semibold text-slate-900">{getTotalHours()} hours</span>
+          Total: <span className="font-semibold text-slate-900">{totalHours} hours</span>
         </div>
       </div>
 

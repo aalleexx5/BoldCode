@@ -19,7 +19,7 @@ const STATUS_COLORS: Record<string, string> = {
   'completed': 'bg-green-100 text-green-800',
 };
 
-export const RequestItem: React.FC<RequestItemProps> = ({ request, onClick, isSelected, onToggleSelect }) => {
+export const RequestItem: React.FC<RequestItemProps> = React.memo(({ request, onClick, isSelected, onToggleSelect }) => {
   const formatDate = (dateString: string) => {
     if (!dateString) return '-';
     const date = new Date(dateString);
@@ -57,4 +57,4 @@ export const RequestItem: React.FC<RequestItemProps> = ({ request, onClick, isSe
       <div onClick={onClick} className="text-sm text-slate-600 cursor-pointer">{(request as any).assigned_to_name || '-'}</div>
     </div>
   );
-};
+});
