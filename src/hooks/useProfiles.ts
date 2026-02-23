@@ -7,8 +7,8 @@ let profilesCacheTime: number = 0;
 const CACHE_DURATION = 5 * 60 * 1000;
 
 export function useProfiles() {
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [profiles, setProfiles] = useState<Profile[]>(profilesCache || []);
+  const [loading, setLoading] = useState(!profilesCache);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
@@ -22,6 +22,7 @@ export function useProfiles() {
           return;
         }
 
+        setLoading(true);
         const querySnapshot = await getDocs(collection(db, 'profiles'));
         const profilesList = querySnapshot.docs.map(doc => ({
           id: doc.id,
@@ -34,6 +35,7 @@ export function useProfiles() {
         setProfiles(profilesList);
         setError(null);
       } catch (err) {
+        console.error('Error loading profiles:', err);
         setError(err as Error);
       } finally {
         setLoading(false);
