@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { db, Request, Client, Profile } from '../../lib/firebase';
 import { collection, query, orderBy, getDocs, doc, getDoc, setDoc, writeBatch, limit, where, startAfter, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
 import { Search, RefreshCw, Plus, Pin, ArrowUpDown, CheckSquare, Square, Calendar, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 import { RequestItem } from './RequestItem';
+import { useProfiles } from '../../hooks/useProfiles';
+import { useClients } from '../../hooks/useClients';
+import { useDebounce } from '../../hooks/useDebounce';
 
 type SortField = 'request_number' | 'title' | 'client_name' | 'due_date' | 'status' | 'request_type' | 'creator_name' | 'assigned_to_name';
 type SortDirection = 'asc' | 'desc';
@@ -30,10 +33,14 @@ const STATUS_OPTIONS = [
 
 export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNewRequest, onNavigateToClients, onNavigateToCalendar, onNavigateToSMCalendar, onNavigateToReports, refreshTrigger }) => {
   const { user } = useAuth();
+  const { profiles } = useProfiles();
+  const { clients } = useClients();
+
   const [requests, setRequests] = useState<Request[]>([]);
   const [filteredRequests, setFilteredRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [isPinned, setIsPinned] = useState(false);
   const [sortField, setSortField] = useState<SortField>('request_number');
@@ -45,6 +52,18 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
   const [pageSize, setPageSize] = useState(50);
   const [totalPages, setTotalPages] = useState(1);
   const [allRequestsCache, setAllRequestsCache] = useState<Request[]>([]);
+
+  const profilesMap = useMemo(() => {
+    const map = new Map<string, Profile>();
+    profiles.forEach(profile => map.set(profile.id, profile));
+    return map;
+  }, [profiles]);
+
+  const clientsMap = useMemo(() => {
+    const map = new Map<string, Client>();
+    clients.forEach(client => map.set(client.id, client));
+    return map;
+  }, [clients]);
 
   useEffect(() => {
     if (user) {
@@ -63,7 +82,7 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
 
   useEffect(() => {
     applyFilters();
-  }, [requests, searchQuery, selectedFilters, sortField, sortDirection]);
+  }, [requests, debouncedSearchQuery, selectedFilters, sortField, sortDirection]);
 
   const loadPinnedFilters = async () => {
     try {
@@ -111,42 +130,6 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
         ...docSnap.data(),
       } as Request));
 
-      const userIds = new Set<string>();
-      const clientIds = new Set<string>();
-
-      requestsData.forEach((request) => {
-        userIds.add(request.created_by);
-        if (request.assigned_to && request.assigned_to !== 'Everyone') {
-          userIds.add(request.assigned_to);
-        }
-        if (request.client_id) {
-          clientIds.add(request.client_id);
-        }
-      });
-
-      const profilesMap = new Map<string, Profile>();
-      const clientsMap = new Map<string, Client>();
-
-      const userIdsArray = Array.from(userIds);
-      for (let i = 0; i < userIdsArray.length; i += 10) {
-        const batch = userIdsArray.slice(i, i + 10);
-        const profilesQuery = query(collection(db, 'profiles'), where('__name__', 'in', batch));
-        const profilesSnapshot = await getDocs(profilesQuery);
-        profilesSnapshot.docs.forEach((doc) => {
-          profilesMap.set(doc.id, { id: doc.id, ...doc.data() } as Profile);
-        });
-      }
-
-      const clientIdsArray = Array.from(clientIds);
-      for (let i = 0; i < clientIdsArray.length; i += 10) {
-        const batch = clientIdsArray.slice(i, i + 10);
-        const clientsQuery = query(collection(db, 'clients'), where('__name__', 'in', batch));
-        const clientsSnapshot = await getDocs(clientsQuery);
-        clientsSnapshot.docs.forEach((doc) => {
-          clientsMap.set(doc.id, { id: doc.id, ...doc.data() } as Client);
-        });
-      }
-
       requestsData.forEach((request) => {
         const creator = profilesMap.get(request.created_by);
         if (creator) {
@@ -189,8 +172,8 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
       filtered = filtered.filter((req) => selectedFilters.includes(req.status));
     }
 
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
+    if (debouncedSearchQuery.trim()) {
+      const query = debouncedSearchQuery.toLowerCase();
       filtered = filtered.filter(
         (req) =>
           req.title.toLowerCase().includes(query) ||
