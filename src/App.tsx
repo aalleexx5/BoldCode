@@ -95,6 +95,7 @@ const AppContent: React.FC = () => {
               setCalendarFilters(filters);
               setCurrentPage('calendar');
             }}
+            onNavigateToSMCalendar={() => setCurrentPage('sm-calendar')}
             onNavigateToReports={() => setCurrentPage('reports')}
             refreshTrigger={refreshTrigger}
           />

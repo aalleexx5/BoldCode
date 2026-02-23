@@ -13,6 +13,7 @@ interface RequestListProps {
   onNewRequest: () => void;
   onNavigateToClients: () => void;
   onNavigateToCalendar: (filters: string[]) => void;
+  onNavigateToSMCalendar: () => void;
   onNavigateToReports: () => void;
   refreshTrigger: number;
 }
@@ -27,7 +28,7 @@ const STATUS_OPTIONS = [
   { value: 'canceled', label: 'Canceled' },
 ];
 
-export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNewRequest, onNavigateToClients, onNavigateToCalendar, onNavigateToReports, refreshTrigger }) => {
+export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNewRequest, onNavigateToClients, onNavigateToCalendar, onNavigateToSMCalendar, onNavigateToReports, refreshTrigger }) => {
   const { user } = useAuth();
   const [requests, setRequests] = useState<Request[]>([]);
   const [filteredRequests, setFilteredRequests] = useState<Request[]>([]);
@@ -291,6 +292,13 @@ export const RequestList: React.FC<RequestListProps> = ({ onSelectRequest, onNew
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-slate-800">Requests</h2>
           <div className="flex items-center gap-3">
+            <button
+              onClick={onNavigateToSMCalendar}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition font-medium"
+            >
+              <Calendar className="w-5 h-5" />
+              SM Calendar
+            </button>
             <button
               onClick={() => onNavigateToCalendar(selectedFilters)}
               className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition font-medium"
