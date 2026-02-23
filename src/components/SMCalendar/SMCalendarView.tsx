@@ -135,6 +135,60 @@ export const SMCalendarView: React.FC<SMCalendarViewProps> = ({ onBack }) => {
     }
   };
 
+  const handleDuplicateNote = async (note: SMCalendarNote) => {
+    if (!profile) return;
+
+    try {
+      await addDoc(collection(db, 'sm_calendar_notes'), {
+        note_number: generateNoteNumber(),
+        title: `${note.title}-copy`,
+        content: note.content,
+        date: note.date,
+        emoji: note.emoji || '📝',
+        color: note.color || '#3b82f6',
+        created_by: profile.id,
+        created_by_name: profile.full_name,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error('Error duplicating note:', error);
+      throw error;
+    }
+  };
+
+  const handleNoteDrop = async (noteId: string, newDate: string) => {
+    try {
+      const noteRef = doc(db, 'sm_calendar_notes', noteId);
+      await updateDoc(noteRef, {
+        date: newDate,
+        updated_at: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error('Error updating note date:', error);
+      throw error;
+    }
+  };
+
+  const handleDragStart = (e: React.DragEvent, noteId: string) => {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('noteId', noteId);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, date: Date) => {
+    e.preventDefault();
+    const noteId = e.dataTransfer.getData('noteId');
+    if (noteId) {
+      const newDate = date.toISOString().split('T')[0];
+      handleNoteDrop(noteId, newDate);
+    }
+  };
+
   const navigateMonth = (direction: 'prev' | 'next') => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + (direction === 'next' ? 1 : -1), 1));
   };
@@ -231,6 +285,8 @@ export const SMCalendarView: React.FC<SMCalendarViewProps> = ({ onBack }) => {
                       className={`min-h-[120px] p-3 ${
                         date ? 'bg-white hover:bg-slate-50' : 'bg-slate-50'
                       } ${isToday(date) ? 'bg-blue-50 hover:bg-blue-100' : ''}`}
+                      onDragOver={date ? handleDragOver : undefined}
+                      onDrop={date ? (e) => handleDrop(e, date) : undefined}
                     >
                       {date && (
                         <>
@@ -251,7 +307,12 @@ export const SMCalendarView: React.FC<SMCalendarViewProps> = ({ onBack }) => {
                               <Plus className="w-4 h-4 text-blue-600" />
                             </button>
                           </div>
-                          <NotesList notes={dayNotes} onEditNote={handleEditNote} />
+                          <NotesList
+                            notes={dayNotes}
+                            onEditNote={handleEditNote}
+                            onDragStart={handleDragStart}
+                            onDuplicateNote={handleDuplicateNote}
+                          />
                         </>
                       )}
                     </div>
