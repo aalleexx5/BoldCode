@@ -49,6 +49,8 @@ export const NoteShortcuts: React.FC<NoteShortcutsProps> = ({ requestId }) => {
         request_id: noteData.request_id || null,
         updated_at: new Date().toISOString(),
       });
+      setShowNoteModal(false);
+      setSelectedNote(undefined);
     } catch (error) {
       console.error('Error saving note:', error);
       throw error;
@@ -58,6 +60,8 @@ export const NoteShortcuts: React.FC<NoteShortcutsProps> = ({ requestId }) => {
   const handleDeleteNote = async (noteId: string) => {
     try {
       await deleteDoc(doc(db, 'sm_calendar_notes', noteId));
+      setShowNoteModal(false);
+      setSelectedNote(undefined);
     } catch (error) {
       console.error('Error deleting note:', error);
       throw error;
