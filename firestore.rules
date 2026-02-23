@@ -129,38 +129,6 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // SM Calendar Notes collection
-    match /sm_calendar_notes/{noteId} {
-      // All authenticated users can read notes (team collaboration)
-      allow read: if isAuthenticated();
-
-      // All authenticated users can create notes
-      allow create: if isAuthenticated() &&
-                       request.resource.data.created_by == request.auth.uid;
-
-      // All authenticated users can update notes
-      allow update: if isAuthenticated();
-
-      // All authenticated users can delete notes
-      allow delete: if isAuthenticated();
-    }
-
-    // User Filter Preferences collection
-    match /user_filter_preferences/{userId} {
-      // Users can only read their own filter preferences
-      allow read: if isOwner(userId);
-
-      // Users can create their own filter preferences
-      allow create: if isOwner(userId) &&
-                       request.resource.data.user_id == userId;
-
-      // Users can only update their own filter preferences
-      allow update: if isOwner(userId);
-
-      // Users can delete their own filter preferences
-      allow delete: if isOwner(userId);
-    }
-
     // Deny all other access by default
     match /{document=**} {
       allow read, write: if false;

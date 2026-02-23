@@ -9,7 +9,6 @@ import { CommentsSection } from './CommentsSection';
 import { CostTrackerSection } from './CostTrackerSection';
 import { RichTextEditor } from './RichTextEditor';
 import { AssignedToSelector } from './AssignedToSelector';
-import { NoteShortcuts } from './NoteShortcuts';
 import emailjs from '@emailjs/browser';
 
 interface RequestFormProps {
@@ -667,8 +666,6 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
                     placeholder="Enter detailed description of the request..."
                   />
                 </div>
-
-                {requestId && <NoteShortcuts requestId={requestId} />}
 
                 <LinksSection
                   requestId={requestId}
