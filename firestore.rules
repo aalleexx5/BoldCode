@@ -97,22 +97,20 @@ service cloud.firestore {
                        resource.data.user_id == request.auth.uid;
     }
 
-    // Cost Tracker subcollection
+    // Cost Tracker subcollection (legacy path)
     match /requests/{requestId}/cost_tracker/{trackerId} {
-      // All authenticated users can read cost tracking entries
       allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAuthenticated();
+    }
 
-      // Users can create cost tracking entries with their own user_id
-      allow create: if isAuthenticated() &&
-                       request.resource.data.user_id == request.auth.uid;
-
-      // Users can only update their own cost tracking entries
-      allow update: if isAuthenticated() &&
-                       resource.data.user_id == request.auth.uid;
-
-      // Users can only delete their own cost tracking entries
-      allow delete: if isAuthenticated() &&
-                       resource.data.user_id == request.auth.uid;
+    // Cost Trackers top-level collection
+    match /cost_trackers/{trackerId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAuthenticated();
     }
 
     // Activity Logs subcollection
