@@ -19,6 +19,7 @@ export const SMCalendarView: React.FC<SMCalendarViewProps> = ({ onBack }) => {
   const [loading, setLoading] = useState(true);
   const [visibleMonths, setVisibleMonths] = useState<Date[]>([]);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const isLoadingMoreRef = React.useRef(false);
 
   useEffect(() => {
     const today = new Date();
@@ -231,13 +232,19 @@ export const SMCalendarView: React.FC<SMCalendarViewProps> = ({ onBack }) => {
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
 
+    if (isLoadingMoreRef.current) return;
+
     if (scrollTop < 200) {
+      isLoadingMoreRef.current = true;
       loadMoreMonths('before');
       e.currentTarget.scrollTop = scrollTop + 600;
+      setTimeout(() => { isLoadingMoreRef.current = false; }, 300);
     }
 
     if (scrollHeight - scrollTop - clientHeight < 200) {
+      isLoadingMoreRef.current = true;
       loadMoreMonths('after');
+      setTimeout(() => { isLoadingMoreRef.current = false; }, 300);
     }
   };
 
