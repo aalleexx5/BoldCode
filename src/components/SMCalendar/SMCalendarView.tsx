@@ -210,7 +210,7 @@ export const SMCalendarView: React.FC<SMCalendarViewProps> = ({ onBack }) => {
       if (direction === 'before') {
         const firstMonth = prev[0];
         const newMonths: Date[] = [];
-        for (let i = 3; i >= 1; i--) {
+        for (let i = 6; i >= 1; i--) {
           newMonths.push(
             new Date(firstMonth.getFullYear(), firstMonth.getMonth() - i, 1)
           );
@@ -219,7 +219,7 @@ export const SMCalendarView: React.FC<SMCalendarViewProps> = ({ onBack }) => {
       } else {
         const lastMonth = prev[prev.length - 1];
         const newMonths: Date[] = [];
-        for (let i = 1; i <= 3; i++) {
+        for (let i = 1; i <= 6; i++) {
           newMonths.push(
             new Date(lastMonth.getFullYear(), lastMonth.getMonth() + i, 1)
           );
@@ -230,21 +230,23 @@ export const SMCalendarView: React.FC<SMCalendarViewProps> = ({ onBack }) => {
   };
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-
     if (isLoadingMoreRef.current) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+
+    if (distanceFromBottom < 400) {
+      isLoadingMoreRef.current = true;
+      loadMoreMonths('after');
+      setTimeout(() => { isLoadingMoreRef.current = false; }, 500);
+      return;
+    }
 
     if (scrollTop < 200) {
       isLoadingMoreRef.current = true;
       loadMoreMonths('before');
       e.currentTarget.scrollTop = scrollTop + 600;
-      setTimeout(() => { isLoadingMoreRef.current = false; }, 300);
-    }
-
-    if (scrollHeight - scrollTop - clientHeight < 200) {
-      isLoadingMoreRef.current = true;
-      loadMoreMonths('after');
-      setTimeout(() => { isLoadingMoreRef.current = false; }, 300);
+      setTimeout(() => { isLoadingMoreRef.current = false; }, 500);
     }
   };
 
