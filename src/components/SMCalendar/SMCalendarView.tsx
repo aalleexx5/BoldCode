@@ -19,16 +19,13 @@ export const SMCalendarView: React.FC<SMCalendarViewProps> = ({ onBack }) => {
   const [loading, setLoading] = useState(true);
   const [visibleMonths, setVisibleMonths] = useState<Date[]>([]);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
-  const isLoadingMoreRef = React.useRef(false);
 
   useEffect(() => {
     const today = new Date();
     const months: Date[] = [];
-
-    for (let i = -3; i <= 3; i++) {
+    for (let i = 0; i <= 3; i++) {
       months.push(new Date(today.getFullYear(), today.getMonth() + i, 1));
     }
-
     setVisibleMonths(months);
   }, []);
 
@@ -210,44 +207,19 @@ export const SMCalendarView: React.FC<SMCalendarViewProps> = ({ onBack }) => {
       if (direction === 'before') {
         const firstMonth = prev[0];
         const newMonths: Date[] = [];
-        for (let i = 6; i >= 1; i--) {
-          newMonths.push(
-            new Date(firstMonth.getFullYear(), firstMonth.getMonth() - i, 1)
-          );
+        for (let i = 3; i >= 1; i--) {
+          newMonths.push(new Date(firstMonth.getFullYear(), firstMonth.getMonth() - i, 1));
         }
         return [...newMonths, ...prev];
       } else {
         const lastMonth = prev[prev.length - 1];
         const newMonths: Date[] = [];
-        for (let i = 1; i <= 6; i++) {
-          newMonths.push(
-            new Date(lastMonth.getFullYear(), lastMonth.getMonth() + i, 1)
-          );
+        for (let i = 1; i <= 3; i++) {
+          newMonths.push(new Date(lastMonth.getFullYear(), lastMonth.getMonth() + i, 1));
         }
         return [...prev, ...newMonths];
       }
     });
-  };
-
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    if (isLoadingMoreRef.current) return;
-
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-
-    if (distanceFromBottom < 400) {
-      isLoadingMoreRef.current = true;
-      loadMoreMonths('after');
-      setTimeout(() => { isLoadingMoreRef.current = false; }, 500);
-      return;
-    }
-
-    if (scrollTop < 200) {
-      isLoadingMoreRef.current = true;
-      loadMoreMonths('before');
-      e.currentTarget.scrollTop = scrollTop + 600;
-      setTimeout(() => { isLoadingMoreRef.current = false; }, 500);
-    }
   };
 
   const goToToday = () => {
@@ -310,9 +282,17 @@ export const SMCalendarView: React.FC<SMCalendarViewProps> = ({ onBack }) => {
       <div
         ref={scrollContainerRef}
         className="flex-1 overflow-auto p-6"
-        onScroll={handleScroll}
       >
         <div className="space-y-8 max-w-7xl mx-auto">
+          <div className="flex justify-center">
+            <button
+              onClick={() => loadMoreMonths('before')}
+              className="px-6 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 hover:border-slate-400 transition text-sm font-medium shadow-sm"
+            >
+              Load Previous Months
+            </button>
+          </div>
+
           {visibleMonths.map((monthDate, monthIndex) => {
             const weeks = getMonthData(monthDate);
             const isCurrentMonth =
@@ -398,6 +378,15 @@ export const SMCalendarView: React.FC<SMCalendarViewProps> = ({ onBack }) => {
               </div>
             );
           })}
+
+          <div className="flex justify-center pb-4">
+            <button
+              onClick={() => loadMoreMonths('after')}
+              className="px-6 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 hover:border-slate-400 transition text-sm font-medium shadow-sm"
+            >
+              Load Future Months
+            </button>
+          </div>
         </div>
       </div>
 
