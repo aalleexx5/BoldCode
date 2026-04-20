@@ -218,9 +218,9 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         return;
       }
 
-      const emailjsServiceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-      const emailjsTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_STATUS_UPDATE;
-      const emailjsPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+      const emailjsServiceId = import.meta.env.VITE_EMAILJS_SERVICE_ID || 'service_9oeyr4o';
+      const emailjsTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_STATUS_UPDATE || 'template_iskjx5y';
+      const emailjsPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || 'ho-W6ZfNUEFPtwDxq';
 
       console.log('📋 EmailJS Configuration:');
       console.log('  - Service ID:', emailjsServiceId ? `${emailjsServiceId.substring(0, 8)}...` : '❌ MISSING');
@@ -322,9 +322,9 @@ export const RequestForm: React.FC<RequestFormProps> = ({ requestId, onClose, on
         return;
       }
 
-      const emailjsServiceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-      const emailjsTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_NEW_REQUEST;
-      const emailjsPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+      const emailjsServiceId = import.meta.env.VITE_EMAILJS_SERVICE_ID || 'service_9oeyr4o';
+      const emailjsTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_NEW_REQUEST || 'template_xyej9ht';
+      const emailjsPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || 'ho-W6ZfNUEFPtwDxq';
 
       console.log('📋 EmailJS Configuration:');
       console.log('  - Service ID:', emailjsServiceId ? `${emailjsServiceId.substring(0, 8)}...` : '❌ MISSING');

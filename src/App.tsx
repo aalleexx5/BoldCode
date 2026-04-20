@@ -193,13 +193,8 @@ const AppContent: React.FC = () => {
 
 function App() {
   useEffect(() => {
-    const emailjsPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
-    if (emailjsPublicKey) {
-      emailjs.init(emailjsPublicKey);
-      console.log('✅ EmailJS initialized successfully');
-    } else {
-      console.error('❌ EmailJS public key not found in environment variables');
-    }
+    const emailjsPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || 'ho-W6ZfNUEFPtwDxq';
+    emailjs.init(emailjsPublicKey);
   }, []);
 
   return (
